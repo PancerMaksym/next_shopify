@@ -1,95 +1,92 @@
+"use client";
 import Image from "next/image";
-import styles from "./page.module.css";
+import "@/style/page.scss";
+import { shopifyFetch } from "@/lib/shopify";
+import { useEffect, useState } from "react";
+
+const PRODUCTS_QUERY = `
+  query Products($after: String) {
+    products(first: 5, after: $after) {
+      edges {
+        node {
+          id
+          title
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+`;
+
+interface Product {
+  id: string;
+  title: string;
+}
+
+interface ShopifyResponse {
+  data: {
+    products: {
+      edges: {
+        node: Product;
+      }[];
+      pageInfo: {
+        hasNextPage: boolean;
+        endCursor: string;
+      };
+    };
+  };
+}
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [store, setStore] = useState<ShopifyResponse | null>(null);
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
+  const generateNewData = async () => {
+
+    const variables = store
+      ? { after: store.data.products.pageInfo.endCursor }
+      : { after: null };
+
+    const newData: ShopifyResponse = await shopifyFetch({
+      query: PRODUCTS_QUERY,
+      variables,
+    });
+
+    console.log("newData: ", newData);
+    console.log("Store: ", store);
+    setStore((prev) => {
+      if (!prev) return newData;
+
+      return {
+        data: {
+          products: {
+            edges: [
+              ...newData.data.products.edges,
+            ],
+            pageInfo: newData.data.products.pageInfo,
+          },
+        },
+      };
+    });
+  };
+
+  useEffect(() => {
+    generateNewData();
+  }, []);
+
+  return (
+    <div className={"page"}>
+      <main className={"main"}>
+        <ul>
+          {store?.data?.products?.edges?.map(({ node }) => (
+            <li key={node.id}>{node.title}</li>
+          ))}
+        </ul>
+        <button onClick={generateNewData}>click</button>
       </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      <footer className={"footer"}></footer>
     </div>
   );
 }

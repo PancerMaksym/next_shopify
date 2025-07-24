@@ -1,0 +1,36 @@
+img {
+  align-self: center;
+  aspect-ratio: 4/5;
+  width: calc(15vw - 32px);
+  height: auto;
+}
+
+h3 {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.photoBlock {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+
+  button {
+    background-color: #333;
+    filter: opacity(0.5);
+    border: none;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    z-index: 1;
+    cursor: pointer;
+
+    &:first-child{
+        transform: translateX(2rem);
+    }
+    &:not(:first-child){
+        transform: translateX(-2rem);
+    }
+  }
+}

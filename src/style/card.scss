@@ -1,0 +1,23 @@
+.card{
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 15vw;
+    height: auto;
+    border: 1px #fff;
+    border-style:inset;
+    padding: 8px;
+}
+
+img{
+    align-self: center;
+    aspect-ratio: 4/5;
+    width:  calc(15vw - 32px);
+    height: auto;
+}
+
+h3{
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

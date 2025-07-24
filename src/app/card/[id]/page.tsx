@@ -1,0 +1,135 @@
+"use client";
+import { shopifyFetch } from "@/lib/shopify";
+import Image from "next/image";
+import { useEffect, useState, use } from "react";
+import "@/style/cardPage.scss";
+import Link from "next/link";
+
+const PRODUCTS_QUERY = `
+  query Product($id: ID) {
+    product(id: $id) {
+      id
+      title
+      description
+      handle
+      tags
+      images(first: 5) {
+        nodes {
+          url
+        }
+      }
+      variants(first:5){
+        nodes{
+          id
+          title
+          image {
+            url
+          }
+        }
+      }
+    }
+  }
+`;
+
+export interface ProductData {
+  id: string;
+  title: string;
+  description: string;
+  handle: string;
+  tags: string[];
+  images: {
+    nodes: {
+      url: string;
+    }[];
+  };
+  variants: {
+    nodes: {
+      id: string;
+      title: string;
+      image: {
+        url: string;
+      };
+    }[];
+  };
+}
+
+const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
+  const decodedParam: { id: string } = use(params);
+  const id = decodeURIComponent(decodedParam.id);
+  const [photoIdx, setPhotoIdx] = useState(0);
+  const [product, setProduct] = useState<ProductData | null>(null);
+
+  const setNewData = async () => {
+    const response = await shopifyFetch({
+      query: PRODUCTS_QUERY,
+      variables: { id },
+    });
+    console.log(response);
+    setProduct(response.data.product);
+  };
+
+  useEffect(() => {
+    setNewData();
+    console.log("end");
+    console.log(product);
+  }, []);
+
+  const handlePrevPhoto = () => {
+    if (!product) return;
+    setPhotoIdx(
+      (prev) =>
+        (prev - 1 + product.images.nodes.length) % product.images.nodes.length
+    );
+  };
+
+  const handleNextPhoto = () => {
+    if (!product) return;
+    setPhotoIdx((prev) => (prev + 1) % product.images.nodes.length);
+  };
+
+  console.log(product);
+
+  if (product == null) {
+    return <div>Loading</div>;
+  }
+
+  console.log(product);
+
+  return (
+    <main>
+      <div className="photoBlock">
+        <button onClick={handlePrevPhoto}>&lt;</button>
+        <Image
+          src={product?.images.nodes[photoIdx]?.url || "/placeholder.jpg"}
+          alt={product?.title || "Product image"}
+          width={900}
+          height={1600}
+        />
+        <button onClick={handleNextPhoto}>&gt;</button>
+      </div>
+      <div className="variants">
+        {product.variants.nodes.map((node, index) => {
+          const corectId = node.id.split("Variant")[0] + node.id.split("Variant")[1];
+          return (
+            <Link
+              href={`/card/${encodeURIComponent(corectId)}`}
+              key={index}
+              className="var"
+            >
+              <Image
+                src={node.image.url}
+                alt={node.title}
+                width={200}
+                height={300}
+              />
+            </Link>
+          );
+        })}
+      </div>
+      <h3>{product?.title}</h3>
+      <h4>{product.description}</h4>
+    </main>
+  );
+};
+
+export default CardPage;

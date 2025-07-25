@@ -1,9 +1,8 @@
 "use client";
-import { shopifyFetch } from "@/lib/shopify";
 import Image from "next/image";
 import { useEffect, useState, use } from "react";
 import "@/style/cardPage.scss";
-import Link from "next/link";
+import { shopifyStorefontFetch } from "@/lib/shopify-storefront";
 
 const PRODUCTS_QUERY = `
   query Product($id: ID) {
@@ -24,6 +23,9 @@ const PRODUCTS_QUERY = `
           title
           image {
             url
+          }
+          price{
+            amount
           }
         }
       }
@@ -49,6 +51,9 @@ export interface ProductData {
       image: {
         url: string;
       };
+      price: {
+        amount: string;
+      };
     }[];
   };
 }
@@ -60,7 +65,7 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
   const [product, setProduct] = useState<ProductData | null>(null);
 
   const setNewData = async () => {
-    const response = await shopifyFetch({
+    const response = await shopifyStorefontFetch({
       query: PRODUCTS_QUERY,
       variables: { id },
     });
@@ -98,35 +103,39 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
   return (
     <main>
       <div className="photoBlock">
-        <button onClick={handlePrevPhoto}>&lt;</button>
+        {product.images.nodes.length > 1 ? (
+          <button onClick={handlePrevPhoto}>&lt;</button>
+        ) : null}
+
         <Image
           src={product?.images.nodes[photoIdx]?.url || "/placeholder.jpg"}
           alt={product?.title || "Product image"}
           width={900}
           height={1600}
         />
-        <button onClick={handleNextPhoto}>&gt;</button>
+        {product.images.nodes.length > 1 ? (
+          <button onClick={handlePrevPhoto}>&gt;</button>
+        ) : null}
       </div>
       <div className="variants">
         {product.variants.nodes.map((node, index) => {
-          const corectId = node.id.split("Variant")[0] + node.id.split("Variant")[1];
+          const corectId =
+            node.id.split("Variant")[0] + node.id.split("Variant")[1];
           return (
-            <Link
-              href={`/card/${encodeURIComponent(corectId)}`}
-              key={index}
-              className="var"
-            >
+            <div key={index} className="var">
               <Image
-                src={node.image.url}
+                src={node.image?.url || "/placeholder.jpg"}
                 alt={node.title}
                 width={200}
                 height={300}
               />
-            </Link>
+              <div>${node.price.amount}</div>
+            </div>
           );
         })}
       </div>
-      <h3>{product?.title}</h3>
+      
+      <h3>{product.title}</h3>
       <h4>{product.description}</h4>
     </main>
   );

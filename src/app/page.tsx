@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import Card from "@/components/Card";
 import { shopifyStorefontFetch } from "@/lib/shopify-storefront";
 import { useSearchParams } from "next/navigation";
-import { Pages, ShopifyResponse } from "@/lib/types";
+import { CountPage, Pages, ShopifyResponse } from "@/lib/types";
 import { useUserStore } from "@/lib/store";
+import Link from "next/link";
 
 const PRODUCTS_QUERY = `
   query Products($after: String) {
@@ -32,9 +33,9 @@ const PRODUCTS_QUERY = `
 `;
 
 const PAGE_QUERY = `
-  query Products($after: String) {
-    products(first: 4, after: $after) {
-      pageInfo {
+  query Products($first: Int, $after: String) {
+    products(first: $first, after: $after) {
+      pageInfo{
         hasNextPage
         endCursor
       }
@@ -44,13 +45,25 @@ const PAGE_QUERY = `
 
 export default function Home() {
   const [store, setStore] = useState<ShopifyResponse | null>(null);
-  const searchParams = useSearchParams().get("page");
-  const page = searchParams ? Number(searchParams) - 1 : 0;
+  const searchParams = useSearchParams();
+  const pageParam = Number(searchParams.get("page"));
   const [cursor, setCursor] = useState<string | null>(null);
-  const { loadedPages, setPage } = useUserStore();
+  const { loadedPages, setLoadedPages, pageCount, setPageCount } =
+    useUserStore();
 
-  const handleOnClick = (variant?: "Next" | "Prev") => {
-    const delta = variant == "Next" ? 1 : -1;
+  const page =
+    pageParam > pageCount ? pageCount - 1 : pageParam < 1 ? 0 : pageParam - 1;
+
+  const handleOnClick = (variant: "Next" | "Prev" | number) => {
+    let delta: number = 0;
+
+    if (variant === "Next") delta = 1;
+    else if (variant === "Prev") delta = -1;
+    else if (typeof variant === "number") {
+      if (variant > pageCount) delta = pageCount - page;
+      else if (variant < 1) delta = 0 - page;
+      else delta = variant - page;
+    }
 
     const updatedUrl = new URL(window.location.href);
     updatedUrl.searchParams.set("page", (page + delta + 1).toString());
@@ -59,52 +72,72 @@ export default function Home() {
     window.dispatchEvent(new Event("popstate"));
   };
 
-  const findCursor = async () => {
-    let after: string | null = null;
-    for (let index = 0; index < page; index++) {
-      const response = await shopifyStorefontFetch({
-        query: PAGE_QUERY,
-        variables: {
-          after: after,
-        },
-      });
-
-      after = response.data.products.pageInfo.endCursor;
+  const checkExist = () => {
+    const existing = loadedPages.find((el: Pages) => el.page === page);
+    if (existing) {
+      setStore(existing.products);
+    } else {
+      findCursor();
     }
+  };
+
+  const findCursor = async () => {
+    const response = await shopifyStorefontFetch({
+      query: PAGE_QUERY,
+      variables: {
+        first: page * 4,
+      },
+    });
+
+    const after = response.data?.products.pageInfo.endCursor;
     setCursor(after);
   };
 
   const fetchProducts = async () => {
-    const existing = loadedPages.find((el: Pages) => el.page === page);
-    console.log("Page: ", page);
-    console.log("Loaded: ", loadedPages);
-    console.log("Exist: ", existing);
+    const newData: ShopifyResponse = await shopifyStorefontFetch({
+      query: PRODUCTS_QUERY,
+      variables: {
+        after: cursor,
+      },
+    });
 
-    if (existing) {
-      console.log(1);
-      setStore(existing.products);
-    } else {
-      console.log(2);
-      const newData: ShopifyResponse = await shopifyStorefontFetch({
-        query: PRODUCTS_QUERY,
-        variables: {
-          after: cursor,
-        },
-      });
-      setPage(page, newData);
-      setStore(newData);
+    setLoadedPages(page, newData);
+    setStore(newData);
+  };
+
+  const getPage = async () => {
+    if (pageCount === 0) {
+      let newCount = 0;
+      let after: string | null = null;
+
+      while (true) {
+        const newData: CountPage = await shopifyStorefontFetch({
+          query: PAGE_QUERY,
+          variables: { first: 4, after: after },
+        });
+
+        newCount++;
+        after = await newData.data?.products?.pageInfo.endCursor;
+        if (!newData.data?.products.pageInfo.hasNextPage) break;
+      }
+
+      setPageCount(newCount);
     }
   };
 
   useEffect(() => {
-    findCursor();
+    getPage();
+  }, []);
+
+  useEffect(() => {
+    checkExist();
   }, [page]);
 
   useEffect(() => {
     if (page === 0 || cursor !== null) {
       fetchProducts();
     }
-  }, [cursor, page]);
+  }, [cursor]);
 
   return (
     <div className={"page"}>
@@ -121,12 +154,33 @@ export default function Home() {
         </div>
 
         <div className="buttons">
-          {store?.data?.products?.pageInfo?.hasPreviousPage && (
-            <button onClick={() => handleOnClick("Prev")}>Prev</button>
-          )}
-          {store?.data?.products?.pageInfo?.hasNextPage && (
-            <button onClick={() => handleOnClick("Next")}>Next</button>
-          )}
+          <button
+            disabled={
+              store?.data?.products?.pageInfo?.hasPreviousPage ? false : true
+            }
+            onClick={() => handleOnClick("Prev")}
+          >
+            Prev
+          </button>
+          {[...Array(pageCount)].map((_, index) => (
+            <button
+              onClick={() => {
+                if (page !== index) handleOnClick(index);
+              }}
+              key={index}
+              className={page === index ? "active button" : "button"}
+            >
+              {index + 1}
+            </button>
+          ))}
+          <button
+            disabled={
+              store?.data?.products?.pageInfo?.hasNextPage ? false : true
+            }
+            onClick={() => handleOnClick("Next")}
+          >
+            Next
+          </button>
         </div>
       </main>
       <footer className={"footer"}></footer>

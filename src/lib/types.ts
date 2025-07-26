@@ -24,6 +24,17 @@ export interface ShopifyResponse {
   };
 }
 
+export interface CountPage{
+  data: {
+    products: {
+      pageInfo: {
+        hasNextPage: boolean;
+        endCursor: string;
+      }
+    }
+  }
+}
+
 export interface Pages{
   page: number; 
   products: ShopifyResponse

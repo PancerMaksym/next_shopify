@@ -69,14 +69,12 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
       query: PRODUCTS_QUERY,
       variables: { id },
     });
-    console.log(response);
+    
     setProduct(response.data.product);
   };
 
   useEffect(() => {
     setNewData();
-    console.log("end");
-    console.log(product);
   }, []);
 
   const handlePrevPhoto = () => {
@@ -92,13 +90,9 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
     setPhotoIdx((prev) => (prev + 1) % product.images.nodes.length);
   };
 
-  console.log(product);
-
   if (product == null) {
     return <div>Loading</div>;
   }
-
-  console.log(product);
 
   return (
     <main>

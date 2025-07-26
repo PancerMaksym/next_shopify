@@ -3,16 +3,22 @@ import { ShopifyResponse, Pages } from "./types";
 
 interface userStore {
   loadedPages: Pages[];
-  pages: number;
-  setPage: (pageNum: number, newPage: ShopifyResponse) => void;
+  pageCount: number;
+  setLoadedPages: (pageNum: number, newPage: ShopifyResponse) => void;
+  setPageCount: (newCount: number) => void;
 }
 
-export const useUserStore = create<userStore>((set, get) => ({
+export const useUserStore = create<userStore>((set) => ({
   loadedPages: [],
-  pages: 0,
-  setPage: (pageNum, newPage) => {
+  pageCount: 0,
+  setLoadedPages: (pageNum, newPage) => {
     set((state) => ({
       loadedPages: [...state.loadedPages, { page: pageNum, products: newPage }],
+    }));
+  },
+  setPageCount: (newCount) => {
+    set(() => ({
+      pageCount: newCount,
     }));
   },
 }));

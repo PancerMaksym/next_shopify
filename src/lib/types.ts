@@ -39,3 +39,29 @@ export interface Pages{
   page: number; 
   products: ShopifyResponse
 }
+
+export interface Cart{
+  quantity: number;
+  merchandiseId: string;
+}
+
+export interface CartInput{
+  input: {
+    lines : Cart[];
+    delivery: {
+      addresses: {
+        address: {
+          deliveryAddress: {
+            address1: string;
+            city: string;
+            firstName: string;
+            lastName: string;
+            phone: string;
+            countryCode: string;
+            zip: string;
+          }
+        }
+      }[]
+    }
+  }
+}

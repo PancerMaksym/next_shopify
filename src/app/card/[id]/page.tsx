@@ -3,6 +3,7 @@ import Image from "next/image";
 import { useEffect, useState, use } from "react";
 import "@/style/cardPage.scss";
 import { shopifyStorefontFetch } from "@/lib/shopify-storefront";
+import { useUserStore } from "@/lib/store";
 
 const PRODUCTS_QUERY = `
   query Product($id: ID) {
@@ -63,13 +64,15 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
   const id = decodeURIComponent(decodedParam.id);
   const [photoIdx, setPhotoIdx] = useState(0);
   const [product, setProduct] = useState<ProductData | null>(null);
+  const [count, setCount] = useState(1);
+  const { changeCart } = useUserStore();
 
   const setNewData = async () => {
     const response = await shopifyStorefontFetch({
       query: PRODUCTS_QUERY,
       variables: { id },
     });
-    
+
     setProduct(response.data.product);
   };
 
@@ -128,7 +131,25 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
           );
         })}
       </div>
-      
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+        }}
+      >
+        <div>
+          <button onClick={() => setCount((prev) => prev - 1)}>-</button>
+          <input
+            type="number"
+            value={count}
+            onChange={(e) => setCount(parseInt(e.target.value) || 0)}
+            min={1}
+          />
+          <button onClick={() => setCount((prev) => prev + 1)}>+</button>
+        </div>
+        <button type="submit" onClick={() => changeCart("Add", {quantity: count, merchandiseId: product.variants.nodes[0].id, })}>Add</button>
+      </form>
+
       <h3>{product.title}</h3>
       <h4>{product.description}</h4>
     </main>

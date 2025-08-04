@@ -1,20 +1,25 @@
 "use client";
-import { shopifyStorefontFetch } from "@/lib/shopify-storefront";
+//import { shopifyStorefontFetch } from "@/lib/shopify-storefront";
 import { useUserStore } from "@/lib/store";
-import { CartInput } from "@/lib/types";
+import { Address, DraftOrderInput } from "@/lib/types";
 import "@/style/order.scss";
 import { useState } from "react";
+import countries from "i18n-iso-countries";
+import enLocale from "i18n-iso-countries/langs/en.json";
+
+countries.registerLocale(enLocale);
 
 const createOrder = `
-  mutation cartCreate($input: CartInput!) {
-    cartCreate(input: $input) {
-      userErrors {
-        code
-        message
-      }
-      cart {
+  mutation draftOrderCreate($input: DraftOrderInput!) {
+    draftOrderCreate(input: $input) {
+      draftOrder {
         id
-        checkoutUrl
+        name
+        invoiceUrl
+      }
+      userErrors {
+        field
+        message
       }
     }
   }
@@ -22,82 +27,73 @@ const createOrder = `
 
 export default function Orders() {
   const { cart, changeCart } = useUserStore();
-  const [address, setAddress] = useState({
+  const [address, setAddress] = useState<Address>({
     address1: "",
     city: "",
+    countryCode: "",
     firstName: "",
     lastName: "",
     phone: "",
-    countryCode: "",
+    province: "",
     zip: "",
   });
+  const [email, setEmail] = useState<string>("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setAddress((prev) => ({ ...prev, [name]: value }));
+    if (name === "email") {
+      setEmail(value);
+    } else {
+      setAddress((prev) => ({
+        ...prev,
+
+        [name]:
+          name === "countryCode"
+            ? !!countries.getAlpha2Code(value, "en")
+              ? countries.getAlpha2Code(value, "en")
+              : value
+            : value,
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const cartInput: CartInput = {
-      input: {
-        lines: cart,
-        delivery: {
-          addresses: [
-            {
-              address: {
-                deliveryAddress: address,
-              },
-            },
-          ],
-        },
-      },
+    const DraftOrderInput: DraftOrderInput = {
+      lineItems: cart,
+      shippingAddress: address,
+      email,
     };
 
-    const response = await shopifyStorefontFetch({
-      query: createOrder,
-      variables: {
-        input: cartInput,
-      },
+    const result = await fetch("/api/admin-request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: createOrder,
+        variables: { input: DraftOrderInput },
+      }),
     });
-
-    console.log("Respons:", response);
+    const data = await result.json();
+    console.log("Respons:", data);
+    
   };
-
 
   return (
     <main className="order_page">
       {cart.map((el, index) => (
         <div key={index} className="order">
-          <div>{el.merchandiseId}</div>
+          <div>{el.variantId}</div>
           <div>{el.quantity} </div>
           <button onClick={() => changeCart("Delete", el)}>Delete</button>
         </div>
       ))}
 
       <form onSubmit={handleSubmit} className="personal_data">
-
-        <input
-          type="text"
-          name="firstName"
-          placeholder="First Name"
-          value={address.firstName}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="text"
-          name="lastName"
-          placeholder="Last Name"
-          value={address.lastName}
-          onChange={handleChange}
-          required
-        />
         <input
           type="text"
           name="address1"
-          placeholder="Address"
+          placeholder="Addres"
           value={address.address1}
           onChange={handleChange}
           required
@@ -112,17 +108,25 @@ export default function Orders() {
         />
         <input
           type="text"
-          name="zip"
-          placeholder="ZIP"
-          value={address.zip}
+          name="countryCode"
+          placeholder="Country Code (e.g. UA)"
+          value={address.countryCode}
           onChange={handleChange}
           required
         />
         <input
           type="text"
-          name="countryCode"
-          placeholder="Country Code (e.g. UA)"
-          value={address.countryCode}
+          name="firstName"
+          placeholder="First name"
+          value={address.firstName}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="text"
+          name="lastName"
+          placeholder="Last name"
+          value={address.lastName}
           onChange={handleChange}
           required
         />
@@ -134,7 +138,30 @@ export default function Orders() {
           onChange={handleChange}
           required
         />
-
+        <input
+          type="text"
+          name="province"
+          placeholder="Province"
+          value={address.province}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="text"
+          name="zip"
+          placeholder="Zip"
+          value={address.zip}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="text"
+          name="email"
+          placeholder="Email"
+          value={email}
+          onChange={handleChange}
+          required
+        />
         <button type="submit">Submit</button>
       </form>
     </main>

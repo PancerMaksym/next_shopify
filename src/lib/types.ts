@@ -24,44 +24,40 @@ export interface ShopifyResponse {
   };
 }
 
-export interface CountPage{
+export interface CountPage {
   data: {
     products: {
       pageInfo: {
         hasNextPage: boolean;
         endCursor: string;
-      }
-    }
-  }
+      };
+    };
+  };
 }
 
-export interface Pages{
-  page: number; 
-  products: ShopifyResponse
+export interface Pages {
+  page: number;
+  products: ShopifyResponse;
 }
 
-export interface Cart{
+export interface Cart {
   quantity: number;
-  merchandiseId: string;
+  variantId: string;
 }
 
-export interface CartInput{
-  input: {
-    lines : Cart[];
-    delivery: {
-      addresses: {
-        address: {
-          deliveryAddress: {
-            address1: string;
-            city: string;
-            firstName: string;
-            lastName: string;
-            phone: string;
-            countryCode: string;
-            zip: string;
-          }
-        }
-      }[]
-    }
-  }
+export interface Address {
+  address1: string;
+  city: string;
+  countryCode: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  province: string;
+  zip: string;
+}
+
+export interface DraftOrderInput {
+  lineItems: Cart[];
+  shippingAddress: Address;
+  email: string;
 }

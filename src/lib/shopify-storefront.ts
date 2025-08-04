@@ -11,7 +11,7 @@ export async function shopifyStorefontFetch({
   const key = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN;
 
   try {
-    const result = await fetch(`https://${endpoint}/api/2024-07/graphql.json`, {
+    const result = await fetch(`https://${endpoint}/api/2025-07/graphql.json`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

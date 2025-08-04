@@ -147,7 +147,7 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
           />
           <button onClick={() => setCount((prev) => prev + 1)}>+</button>
         </div>
-        <button type="submit" onClick={() => changeCart("Add", {quantity: count, merchandiseId: product.variants.nodes[0].id, })}>Add</button>
+        <button type="submit" onClick={() => changeCart("Add", {quantity: count, variantId: product.variants.nodes[0].id, })}>Add</button>
       </form>
 
       <h3>{product.title}</h3>

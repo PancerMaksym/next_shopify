@@ -32,11 +32,11 @@ export const useUserStore = create<userStore>((set) => ({
       }))
     }else if(type === "Change"){
       set((state)=>({
-        cart: state.cart.map((el) => el.merchandiseId === data.merchandiseId ? data : el)
+        cart: state.cart.map((el) => el.variantId === data.variantId ? data : el)
       }))
     }else if(type === "Delete"){
       set((state) => ({
-        cart: state.cart.filter((el) => el.merchandiseId !== data.merchandiseId)
+        cart: state.cart.filter((el) => el.variantId !== data.variantId)
       }))
     }
   },

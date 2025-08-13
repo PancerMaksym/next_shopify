@@ -78,7 +78,7 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
 
   useEffect(() => {
     setNewData();
-  }, []);
+  });
 
   const handlePrevPhoto = () => {
     if (!product) return;
@@ -111,13 +111,11 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
           height={1600}
         />
         {product.images.nodes.length > 1 ? (
-          <button onClick={handlePrevPhoto}>&gt;</button>
+          <button onClick={handleNextPhoto}>&gt;</button>
         ) : null}
       </div>
       <div className="variants">
         {product.variants.nodes.map((node, index) => {
-          const corectId =
-            node.id.split("Variant")[0] + node.id.split("Variant")[1];
           return (
             <div key={index} className="var">
               <Image

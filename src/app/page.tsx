@@ -1,12 +1,12 @@
 "use client";
+
 import "@/style/page.scss";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Card from "@/components/Card";
 import { shopifyStorefontFetch } from "@/lib/shopify-storefront";
 import { useSearchParams } from "next/navigation";
 import { CountPage, Pages, ShopifyResponse } from "@/lib/types";
 import { useUserStore } from "@/lib/store";
-import Link from "next/link";
 
 const PRODUCTS_QUERY = `
   query Products($after: String) {
@@ -72,16 +72,7 @@ export default function Home() {
     window.dispatchEvent(new Event("popstate"));
   };
 
-  const checkExist = () => {
-    const existing = loadedPages.find((el: Pages) => el.page === page);
-    if (existing) {
-      setStore(existing.products);
-    } else {
-      findCursor();
-    }
-  };
-
-  const findCursor = async () => {
+  const findCursor = useCallback(async () => {
     const response = await shopifyStorefontFetch({
       query: PAGE_QUERY,
       variables: {
@@ -91,9 +82,20 @@ export default function Home() {
 
     const after = response.data?.products.pageInfo.endCursor;
     setCursor(after);
-  };
+  }, [page]);
 
-  const fetchProducts = async () => {
+  const checkExist = useCallback(() => {
+    const existing = loadedPages.find((el: Pages) => el.page === page);
+    if (existing) {
+      setStore(existing.products);
+    } else {
+      findCursor();
+    }
+  }, [page, loadedPages, findCursor]);
+
+  
+
+  const fetchProducts = useCallback(async () => {
     const newData: ShopifyResponse = await shopifyStorefontFetch({
       query: PRODUCTS_QUERY,
       variables: {
@@ -103,7 +105,7 @@ export default function Home() {
 
     setLoadedPages(page, newData);
     setStore(newData);
-  };
+  }, [cursor, page, setLoadedPages]);
 
   const getPage = async () => {
     if (pageCount === 0) {
@@ -127,17 +129,17 @@ export default function Home() {
 
   useEffect(() => {
     getPage();
-  }, []);
+  });
 
   useEffect(() => {
     checkExist();
-  }, [page]);
+  }, [page, checkExist]);
 
   useEffect(() => {
     if (page === 0 || cursor !== null) {
       fetchProducts();
     }
-  }, [cursor]);
+  }, [cursor, fetchProducts, page]);
 
   return (
     <div className={"page"}>

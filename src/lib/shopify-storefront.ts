@@ -1,11 +1,11 @@
 
 
-export async function shopifyStorefontFetch({
+export async function shopifyStorefontFetch<TVariables extends Record<string, unknown>>({
   query,
-  variables = {},
+  variables = {} as TVariables,
 }: {
   query: string;
-  variables?: Record<string, any>;
+  variables?: TVariables;
 }) {
   const endpoint = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN;
   const key = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN;
@@ -17,7 +17,7 @@ export async function shopifyStorefontFetch({
         "Content-Type": "application/json",
         "X-Shopify-Storefront-Access-Token": key!,
       },
-      body: { query, variables } && JSON.stringify({ query, variables }),
+      body: JSON.stringify({ query, variables }),
     });
 
     return await result.json();

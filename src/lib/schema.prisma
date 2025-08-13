@@ -1,0 +1,21 @@
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url = ""
+}
+
+model Cart {
+  id          Int      @id @default(autoincrement())
+  customer_id String
+  cart_id     String
+  status      String   @default("open")
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([customer_id])
+  @@index([customer_id, status])
+}

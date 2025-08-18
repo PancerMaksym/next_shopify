@@ -34,7 +34,32 @@ const PRODUCTS_QUERY = `
   }
 `;
 
-export interface ProductData {
+const CART_ADD = `
+  mutation cartLinesAdd($cartId: ID!, $lines: [CartLineInput!]!) {
+  cartLinesAdd(cartId: $cartId, lines: $lines) {
+    userErrors {
+      field
+      message
+    }
+  }
+}
+`;
+
+const CART_CREATE = `
+  mutation cartCreate($input: CartInput) {
+  cartCreate(input: $input) {
+    cart {
+      id
+    }
+    userErrors {
+      field
+      message
+    }
+  }
+}
+`;
+
+interface ProductData {
   id: string;
   title: string;
   description: string;
@@ -65,7 +90,33 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
   const [photoIdx, setPhotoIdx] = useState(0);
   const [product, setProduct] = useState<ProductData | null>(null);
   const [count, setCount] = useState(1);
-  const { changeCart } = useUserStore();
+  const { cartId, setCartId } = useUserStore();
+
+  const handleAddCart = async () => {
+    try {
+      if (cartId) {
+        const response = await shopifyStorefontFetch({
+          query: CART_ADD,
+          variables: {
+            cartId: cartId,
+            lines: [{ variantId: id, quantity: count }],
+          },
+        });
+      } else {
+        const response = await shopifyStorefontFetch({
+          query: CART_CREATE,
+          variables: {
+            lines: [{ variantId: id, quantity: count }],
+          },
+        });
+        console.log(response)
+        if(response){
+          setCartId(response.data.cartCreate.cart.id)
+          
+        }
+      }
+    } catch (error) {}
+  };
 
   const setNewData = async () => {
     const response = await shopifyStorefontFetch({
@@ -145,7 +196,9 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
           />
           <button onClick={() => setCount((prev) => prev + 1)}>+</button>
         </div>
-        <button type="submit" onClick={() => changeCart("Add", {quantity: count, variantId: product.variants.nodes[0].id, })}>Add</button>
+        <button type="submit" onClick={() => handleAddCart()}>
+          Add
+        </button>
       </form>
 
       <h3>{product.title}</h3>

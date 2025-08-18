@@ -93,8 +93,6 @@ export default function Home() {
     }
   }, [page, loadedPages, findCursor]);
 
-  
-
   const fetchProducts = useCallback(async () => {
     const newData: ShopifyResponse = await shopifyStorefontFetch({
       query: PRODUCTS_QUERY,

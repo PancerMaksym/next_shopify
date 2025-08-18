@@ -49,9 +49,6 @@ export interface Address {
   address1: string;
   city: string;
   countryCode: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
   province: string;
   zip: string;
 }
@@ -59,5 +56,48 @@ export interface Address {
 export interface DraftOrderInput {
   lineItems: Cart[];
   shippingAddress: Address;
-  email: string;
+}
+
+export interface GetCartResponse {
+  data: {
+    cart: {
+      lines: {
+        edges: {
+          node: Cart;
+        }[];
+        pageInfo: {
+          hasNextPage: boolean;
+          endCursor: string | null;
+        };
+      };
+    } | null;
+  };
+}
+
+export interface CartLinesUpdateResponse {
+  data: {
+    cartLinesUpdate: {
+      cart: {
+        id: string;
+      } | null;
+      userErrors: {
+        field: string[];
+        message: string;
+      }[];
+    };
+  };
+}
+
+export interface CartLinesRemoveResponse {
+  data: {
+    cartLinesRemove: {
+      cart: {
+        id: string;
+      } | null;
+      userErrors: {
+        field: string[];
+        message: string;
+      }[];
+    };
+  };
 }

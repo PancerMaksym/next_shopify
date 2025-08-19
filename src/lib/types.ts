@@ -41,8 +41,17 @@ export interface Pages {
 }
 
 export interface Cart {
+  id: string;
   quantity: number;
-  variantId: string;
+  merchandise: {
+    id: string;
+    title: string;
+    product: {
+      id: string;
+      title: string;
+      handle: string;
+    };
+  };
 }
 
 export interface Address {

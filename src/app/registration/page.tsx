@@ -1,6 +1,7 @@
 'use client'
 
 import { shopifyStorefontFetch } from "@/lib/shopify-storefront";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
@@ -89,6 +90,7 @@ export default function  Registration () {
 				/>
         <button type="submit">Submit</button>
       </form>
+      <Link href={"/login"}>Got acount</Link>
 		</main>
 	)
 }

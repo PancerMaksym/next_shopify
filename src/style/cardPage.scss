@@ -8,6 +8,7 @@ h3 {
   display: flex;
   flex-direction: row;
   gap: 8px;
+  cursor: pointer;
   .var{
     display: flex;
     flex-direction: column;
@@ -20,6 +21,10 @@ h3 {
 
   }
   
+}
+
+.active{
+  border: 1px red dotted;
 }
 
 .photoBlock {

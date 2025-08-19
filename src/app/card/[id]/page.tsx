@@ -36,27 +36,27 @@ const PRODUCTS_QUERY = `
 
 const CART_ADD = `
   mutation cartLinesAdd($cartId: ID!, $lines: [CartLineInput!]!) {
-  cartLinesAdd(cartId: $cartId, lines: $lines) {
-    userErrors {
-      field
-      message
+    cartLinesAdd(cartId: $cartId, lines: $lines) {
+      userErrors {
+        field
+        message
+      }
     }
   }
-}
 `;
 
 const CART_CREATE = `
   mutation cartCreate($input: CartInput) {
-  cartCreate(input: $input) {
-    cart {
-      id
-    }
-    userErrors {
-      field
-      message
+    cartCreate(input: $input) {
+      cart {
+        id
+      }
+      userErrors {
+        field
+        message
+      }
     }
   }
-}
 `;
 
 interface ProductData {
@@ -90,6 +90,7 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
   const [photoIdx, setPhotoIdx] = useState(0);
   const [product, setProduct] = useState<ProductData | null>(null);
   const [count, setCount] = useState(1);
+  const [selectedVar, setSelectedVar] = useState(0);
   const { cartId, setCartId } = useUserStore();
 
   const handleAddCart = async () => {
@@ -99,20 +100,22 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
           query: CART_ADD,
           variables: {
             cartId: cartId,
-            lines: [{ variantId: id, quantity: count }],
+            lines: [{ merchandiseId: product?.variants.nodes[selectedVar].id, quantity: count }],
           },
         });
+        console.log(response);
       } else {
         const response = await shopifyStorefontFetch({
           query: CART_CREATE,
           variables: {
-            lines: [{ variantId: id, quantity: count }],
+            input: {
+              lines: [{ merchandiseId: product?.variants.nodes[selectedVar].id, quantity: count }],
+            },
           },
         });
-        console.log(response)
-        if(response){
-          setCartId(response.data.cartCreate.cart.id)
-          
+        console.log(response);
+        if (response) {
+          setCartId(response.data.cartCreate.cart.id);
         }
       }
     } catch (error) {}
@@ -168,7 +171,7 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
       <div className="variants">
         {product.variants.nodes.map((node, index) => {
           return (
-            <div key={index} className="var">
+            <div key={index} onClick={()=>setSelectedVar(index)} className={index === selectedVar? "active var" : "var"}>
               <Image
                 src={node.image?.url || "/placeholder.jpg"}
                 alt={node.title}

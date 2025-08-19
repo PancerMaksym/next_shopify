@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import countries from "i18n-iso-countries";
 import enLocale from "i18n-iso-countries/langs/en.json";
 import { shopifyStorefontFetch } from "@/lib/shopify-storefront";
+import { useRouter } from "next/navigation";
 
 countries.registerLocale(enLocale);
 
@@ -34,53 +35,62 @@ const createOrder = `
 `;
 
 const GET_CART = `
-  query getCart($id: ID!, $after: String){
-    cart(id: $id){
-      lines(first:100, after: $after){
-        nodes{
-          id,
-          quantity
+  query getCart($id: ID!, $after: String) {
+    cart(id: $id) {
+      lines(first: 100, after: $after) {
+        edges {
+          node {
+            id
+            quantity
+            merchandise {
+              ... on ProductVariant {
+                id
+                title
+                product {
+                  id
+                  title
+                  handle
+                }
+              }
+            }
+          }
         }
-        pageInfo{
+        pageInfo {
           hasNextPage
           endCursor
         }
       }
-      
     }
   }
 `;
 
 const UPDATE_CART = `
-mutation cartLinesUpdate($cartId: ID!, $lines: CartLineUpdateInput) {
-  cartLinesUpdate(cartId:cartId, lines:$lines){
-    cart{
-      id
-    }
-    useErrors{
-      field,
-      message
+  mutation cartLinesUpdate($cartId: ID!, $lines: CartLineUpdateInput) {
+    cartLinesUpdate(cartId:cartId, lines:$lines){
+      cart{
+        id
+      }
+      useErrors{
+        field,
+        message
+      }
     }
   }
-}
 `;
 
 const REMOVE_CART = `
-mutation cartLinesRemove($cartId: ID!, $lineIds: [String]) {
-  cartLinesRemove(cartId: $cartId, lineIds: $lineIds){
-    cart{
-      id
-    }
-    useErrors{
-      field,
-      message
+  mutation cartLinesRemove($cartId: ID!, $lineIds: [ID!]!) {
+    cartLinesRemove(cartId: $cartId, lineIds: $lineIds){
+      cart{
+        id
+      }
     }
   }
-}
 `;
 
 export default function Orders() {
   const { cartId } = useUserStore();
+  const router = useRouter();
   const [cart, setCart] = useState<Cart[]>([]);
   const [address, setAddress] = useState<Address>({
     address1: "",
@@ -94,34 +104,47 @@ export default function Orders() {
   const getCart = async () => {
     try {
       let after: string | null = null;
-      let items: Cart[] = [];
+      let items = [];
 
       while (true) {
-        console.log("id: ", cartId)
+        console.log("id: ", cartId);
         const response: GetCartResponse = await shopifyStorefontFetch({
           query: GET_CART,
           variables: { id: cartId, after },
         });
-
+        console.log("response: ", response);
         const edges = response.data?.cart?.lines.edges ?? [];
         items.push(
           ...edges.map((edge) => ({
-            variantId: edge.node.variantId,
+            id: edge.node.id,
             quantity: edge.node.quantity,
+            merchandise: {
+              id: edge.node.merchandise.id,
+              title: edge.node.merchandise.title,
+              product: {
+                id: edge.node.merchandise.product.id,
+                title: edge.node.merchandise.product.title,
+                handle: edge.node.merchandise.product.handle,
+              },
+            }
           }))
         );
-        console.log("resp: ", response)
-        if (!response.data?.cart?.lines.pageInfo.hasNextPage) break;
-        else{
-        after = response.data?.cart.lines.pageInfo.endCursor;}
+
+        console.log("resp: ", response);
+        if (!response.data?.cart?.lines.pageInfo.hasNextPage) {
+          console.log("break");
+          break;
+        } else {
+          after = response.data?.cart.lines.pageInfo.endCursor;
+        }
       }
 
+      console.log("newItem: ", items);
       setCart(items);
     } catch (error) {
       console.error("Error fetching cart:", error);
     }
   };
-
 
   const updateCart = async () => {
     try {
@@ -129,7 +152,7 @@ export default function Orders() {
         query: UPDATE_CART,
         variables: {
           cartId,
-          lines: cart?.map((c) => ({ id: c.variantId, quantity: c.quantity })),
+          lines: cart?.map((c) => ({ id: c.id, quantity: c.quantity })),
         },
       });
 
@@ -141,7 +164,6 @@ export default function Orders() {
     }
   };
 
-
   const removeCart = async (lineId: string) => {
     try {
       const response: CartLinesRemoveResponse = await shopifyStorefontFetch({
@@ -149,7 +171,8 @@ export default function Orders() {
         variables: { cartId, lineIds: [lineId] },
       });
 
-      if (response.data.cartLinesRemove.cart?.id) {
+      console.log("res", response);
+      if (response) {
         await getCart();
       }
     } catch (error) {
@@ -157,10 +180,12 @@ export default function Orders() {
     }
   };
 
-
   useEffect(() => {
+    if (!localStorage.getItem("accessToken")) {
+      router.push("/registration");
+    }
     getCart();
-  });
+  }, [cartId]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -204,9 +229,9 @@ export default function Orders() {
     <main className="order_page">
       {cart?.map((el, index) => (
         <div key={index} className="order">
-          <div>{el.variantId}</div>
+          <div>{el.merchandise.product.title}</div>
           <div>{el.quantity} </div>
-          <button onClick={() => removeCart(el.variantId)}>Delete</button>
+          <button onClick={() => removeCart(el.id)}>Delete</button>
         </div>
       ))}
 

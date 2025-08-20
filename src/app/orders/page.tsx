@@ -6,11 +6,11 @@ import {
   Cart,
   CartLinesRemoveResponse,
   CartLinesUpdateResponse,
-  DraftOrderInput,
+  orderInput,
   GetCartResponse,
 } from "@/lib/types";
 import "@/style/order.scss";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import countries from "i18n-iso-countries";
 import enLocale from "i18n-iso-countries/langs/en.json";
 import { shopifyStorefontFetch } from "@/lib/shopify-storefront";
@@ -18,18 +18,26 @@ import { useRouter } from "next/navigation";
 
 countries.registerLocale(enLocale);
 
-const createOrder = `
-  mutation draftOrderCreate($input: DraftOrderInput!) {
-    draftOrderCreate(input: $input) {
-      draftOrder {
+const CREATE_ORDER = `
+  mutation orderCreate($order: OrderCreateOrderInput!) {
+    orderCreate(order: $order) {
+      order {
         id
-        name
-        invoiceUrl
       }
       userErrors {
         field
         message
       }
+    }
+  }
+`;
+
+const GET_ORDER = `
+  query order($id: ID!) {
+    order(id: $id) {
+      id
+      name
+      invoiceUrl
     }
   }
 `;
@@ -66,7 +74,7 @@ const GET_CART = `
 
 const UPDATE_CART = `
   mutation cartLinesUpdate($cartId: ID!, $lines: CartLineUpdateInput) {
-    cartLinesUpdate(cartId:cartId, lines:$lines){
+    cartLinesUpdate(cartId:$cartId, lines:$lines){
       cart{
         id
       }
@@ -89,7 +97,9 @@ const REMOVE_CART = `
 `;
 
 export default function Orders() {
-  const { cartId } = useUserStore();
+  const { cartId, customer, fetchCustomer, orders, setOrders } = useUserStore();
+  const stableFetchCustomer = useCallback(fetchCustomer, []);
+
   const router = useRouter();
   const [cart, setCart] = useState<Cart[]>([]);
   const [address, setAddress] = useState<Address>({
@@ -101,7 +111,7 @@ export default function Orders() {
   });
   const [email, setEmail] = useState<string>("");
 
-  const getCart = async () => {
+  const getCart = useCallback(async () => {
     try {
       let after: string | null = null;
       let items = [];
@@ -126,7 +136,7 @@ export default function Orders() {
                 title: edge.node.merchandise.product.title,
                 handle: edge.node.merchandise.product.handle,
               },
-            }
+            },
           }))
         );
 
@@ -144,7 +154,7 @@ export default function Orders() {
     } catch (error) {
       console.error("Error fetching cart:", error);
     }
-  };
+  }, [customer]);
 
   const updateCart = async () => {
     try {
@@ -181,11 +191,41 @@ export default function Orders() {
   };
 
   useEffect(() => {
-    if (!localStorage.getItem("accessToken")) {
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) {
       router.push("/registration");
     }
+
+    if (token) {
+      stableFetchCustomer(token);
+    }
+  }, [stableFetchCustomer]);
+
+  const getOrders = useCallback(async () => {
+    const newOrders = [];
+    if (customer) {
+      for (const edge of customer?.orders.edges) {
+        const result = await fetch("/api/admin-request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            query: GET_ORDER,
+            variables: { id: edge.node.id },
+          }),
+        });
+        const data = await result.json();
+        newOrders.push(data);
+      }
+
+      setOrders(newOrders);
+    }
+  }, [customer]);
+
+  useEffect(() => {
     getCart();
-  }, [cartId]);
+    getOrders();
+  }, [customer]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -207,23 +247,39 @@ export default function Orders() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (customer) {
+      const orderInput: orderInput = {
+        lineItems: cart.map((el) => {
+          return {
+            productId: el.id,
+            quantity: el.quantity,
+            variantId: el.merchandise.product.id,
+          };
+        }),
+        customer: {
+          toAssociate: {
+            id: customer?.id,
+          },
+        },
+        billingAddress: address,
+      };
 
-    const DraftOrderInput: DraftOrderInput = {
-      lineItems: cart,
-      shippingAddress: address,
-    };
-
-    const result = await fetch("/api/admin-request", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query: createOrder,
-        variables: { input: DraftOrderInput },
-      }),
-    });
-    const data = await result.json();
-    console.log("Respons:", data);
+      const result = await fetch("/api/admin-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: CREATE_ORDER,
+          variables: { input: orderInput },
+        }),
+      });
+      const data = await result.json();
+      console.log("Respons:", data);
+    }
   };
+
+  if (!customer) {
+    return <div>Loading</div>;
+  }
 
   return (
     <main className="order_page">

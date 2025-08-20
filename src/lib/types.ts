@@ -24,6 +24,36 @@ export interface ShopifyResponse {
   };
 }
 
+export interface Customer {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  orders: {
+    edges: {
+      node: {
+        id: string
+      }
+    }[]
+  }
+}
+
+export interface Order {
+  order: {
+    lineItems: {
+      edges: {
+        node: {
+          id: string;
+          varant: {
+            id: string;
+            title: string;
+          }
+        }
+      }[]
+    }
+  }
+}
+
 export interface CountPage {
   data: {
     products: {
@@ -62,9 +92,18 @@ export interface Address {
   zip: string;
 }
 
-export interface DraftOrderInput {
-  lineItems: Cart[];
-  shippingAddress: Address;
+export interface orderInput {
+  lineItems: {
+    productId: string;
+    quantity: number;
+    variantId: string;
+  }[];
+  customer: {
+    toAssociate: {
+      id: string;
+    }
+  }
+  billingAddress: Address;
 }
 
 export interface GetCartResponse {

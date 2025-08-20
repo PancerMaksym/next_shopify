@@ -4,6 +4,7 @@ import { useEffect, useState, use } from "react";
 import "@/style/cardPage.scss";
 import { shopifyStorefontFetch } from "@/lib/shopify-storefront";
 import { useUserStore } from "@/lib/store";
+import { useRouter } from "next/navigation";
 
 const PRODUCTS_QUERY = `
   query Product($id: ID) {
@@ -85,6 +86,7 @@ interface ProductData {
 }
 
 const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
+  const router = useRouter();
   const decodedParam: { id: string } = use(params);
   const id = decodeURIComponent(decodedParam.id);
   const [photoIdx, setPhotoIdx] = useState(0);
@@ -94,6 +96,9 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
   const { cartId, setCartId } = useUserStore();
 
   const handleAddCart = async () => {
+    if(localStorage.getItem("accessToken")){
+      router.push("/registration");
+    }
     try {
       if (cartId) {
         const response = await shopifyStorefontFetch({

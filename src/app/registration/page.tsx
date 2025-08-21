@@ -48,7 +48,6 @@ export default function  Registration () {
         variables: { input: customerInput },
       });
 
-      console.log("Customer create response:", response);
 			router.push("/login")
     } catch (error) {
       console.error("Error creating customer:", error);

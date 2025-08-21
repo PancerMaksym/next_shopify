@@ -38,11 +38,9 @@ export default function Login() {
         variables: { input: customerAccessTokenCreateInput },
       });
 
-      console.log("Customer access response:", response);
       localStorage.setItem("accessToken", response.data.customerAccessTokenCreate.customerAccessToken.accessToken)
       router.push("/")
     } catch (error) {
-      console.error("Error access customer:", error);
     }
   };
 

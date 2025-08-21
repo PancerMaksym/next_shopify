@@ -15,6 +15,7 @@ import countries from "i18n-iso-countries";
 import enLocale from "i18n-iso-countries/langs/en.json";
 import { shopifyStorefontFetch } from "@/lib/shopify-storefront";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 countries.registerLocale(enLocale);
 
@@ -24,6 +25,17 @@ const CREATE_ORDER = `
       order {
         id
       }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+const CATR_ADD_IDENTITY = `
+  mutation cartBuyerIdentityUpdate($cartId: ID!, $buyerIdentity: CartBuyerIdentityInput!) {
+    cartBuyerIdentityUpdate(cartId: $cartId, buyerIdentity: $buyerIdentity) {
       userErrors {
         field
         message
@@ -97,8 +109,7 @@ const REMOVE_CART = `
 `;
 
 export default function Orders() {
-  const { cartId, customer, fetchCustomer, orders, setOrders } = useUserStore();
-  const stableFetchCustomer = useCallback(fetchCustomer, []);
+  const { cartId, customer, orders, setOrders, dbId, setCartId, setDbId } = useUserStore();
 
   const router = useRouter();
   const [cart, setCart] = useState<Cart[]>([]);
@@ -117,12 +128,10 @@ export default function Orders() {
       let items = [];
 
       while (true) {
-        console.log("id: ", cartId);
         const response: GetCartResponse = await shopifyStorefontFetch({
           query: GET_CART,
           variables: { id: cartId, after },
         });
-        console.log("response: ", response);
         const edges = response.data?.cart?.lines.edges ?? [];
         items.push(
           ...edges.map((edge) => ({
@@ -140,16 +149,13 @@ export default function Orders() {
           }))
         );
 
-        console.log("resp: ", response);
         if (!response.data?.cart?.lines.pageInfo.hasNextPage) {
-          console.log("break");
           break;
         } else {
           after = response.data?.cart.lines.pageInfo.endCursor;
         }
       }
 
-      console.log("newItem: ", items);
       setCart(items);
     } catch (error) {
       console.error("Error fetching cart:", error);
@@ -181,7 +187,6 @@ export default function Orders() {
         variables: { cartId, lineIds: [lineId] },
       });
 
-      console.log("res", response);
       if (response) {
         await getCart();
       }
@@ -191,16 +196,10 @@ export default function Orders() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-
-    if (!token) {
+    if (!customer) {
       router.push("/registration");
     }
-
-    if (token) {
-      stableFetchCustomer(token);
-    }
-  }, [stableFetchCustomer]);
+  });
 
   const getOrders = useCallback(async () => {
     const newOrders = [];
@@ -273,14 +272,22 @@ export default function Orders() {
         }),
       });
       const data = await result.json();
-      console.log("Respons:", data);
+      const response = await fetch(`/api/users?id=${dbId}`, {
+        method: "DELETE",
+      });
+
+      if(response){
+        setDbId(null)
+        setCart([])
+        setCartId(null)
+      }
     }
   };
 
   if (!customer) {
     return <div>Loading</div>;
   }
-
+  
   return (
     <main className="order_page">
       {cart?.map((el, index) => (
@@ -342,6 +349,18 @@ export default function Orders() {
         />
         <button type="submit">Submit</button>
       </form>
+      <div className="orders">
+        <h2>Orders:</h2>
+        {orders?.map((order) => (
+          <div className="order">
+            {order.order.lineItems.edges.map((edge) => (
+              <div className="line">
+                <div>{edge.node.varant.title}</div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
     </main>
   );
 }

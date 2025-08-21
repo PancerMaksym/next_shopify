@@ -23,34 +23,47 @@ const GET_CUSTOMER = `
 interface userStore {
   loadedPages: Pages[];
   pageCount: number;
-  cartId: string;
+  cartId: string | null;
+  checkoutUrl: string | null;
   customer: Customer | null;
   orders: Order[] | null;
+  dbId: number | null;
   setLoadedPages: (pageNum: number, newPage: ShopifyResponse) => void;
   setPageCount: (newCount: number) => void;
-  setCartId: (id: string) => void;
+  setCartId: (id: string | null) => void;
   setCustomer: (customer: Customer) => void;
   fetchCustomer: (token: string) => Promise<void>;
-  setOrders: (orders: Order[]) => void
+  setOrders: (orders: Order[]) => void;
+  setCheckoutUrl: (newUrl: string | null) => void;
+  setDbId: (newId: number | null) => void;
 }
 
 export const useUserStore = create<userStore>((set) => ({
   loadedPages: [],
   pageCount: 0,
-  cartId: "",
+  cartId: null,
+  dbId: null,
   customer: null,
   orders: null,
+  checkoutUrl: null,
 
-  setLoadedPages: (pageNum, newPage) =>
+  setLoadedPages: (pageNum, newPage) => {
     set((state) => ({
       loadedPages: [...state.loadedPages, { page: pageNum, products: newPage }],
-    })),
+    }))
+  },
 
-  setPageCount: (newCount) => set(() => ({ pageCount: newCount })),
+  setPageCount: (newCount) => {
+    set(() => ({ pageCount: newCount }))
+  },
 
-  setCartId: (id) => set(() => ({ cartId: id })),
+  setCartId: (id) => {set(() => (
+    { cartId: id }))
+  },
 
-  setCustomer: (customer) => set(() => ({ customer })),
+  setCustomer: (customer) => {
+    set(() => ({ customer }))
+  },
 
   fetchCustomer: async (token: string) => {
     try {
@@ -69,5 +82,13 @@ export const useUserStore = create<userStore>((set) => ({
 
   setOrders: (orders) => {
     set({orders: orders})
+  },
+
+  setCheckoutUrl: (newUrl) => {
+    set({checkoutUrl: newUrl})
+  },
+
+  setDbId: (newId) => {
+    set({dbId: newId})
   },
 }));

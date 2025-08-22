@@ -1,20 +1,21 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, memo } from "react";
 import { useUserStore } from "@/lib/store";
 
-export default function ClientInit() {
-  const { fetchCustomer, customer, setCartId, setDbId } = useUserStore();
-  const stableFetchCustomer = useCallback(fetchCustomer, [customer]);
+const ClientInit = memo(() => {
+  const { fetchCustomer, customer, setCartId, setDbId, setCustomer } = useUserStore();
+  const stableFetchCustomer = useCallback(fetchCustomer, []);
 
   const fetchCart = useCallback(async () => {
     if (customer) {
       try {
         const response = await fetch(`/api/users?customer_id=${customer.id}`);
         const data = await response.json();
-
-        setCartId(data.cart_id)
-        setDbId(data.id)
+        if (data) {
+          setCartId(data.cart_id);
+          setDbId(data.id);
+        }
       } catch (error) {
         console.error("Error: ", error);
       }
@@ -25,6 +26,8 @@ export default function ClientInit() {
     const token = localStorage.getItem("accessToken");
     if (token) {
       stableFetchCustomer(token);
+    }else{
+      setCustomer(null)
     }
   }, [stableFetchCustomer]);
 
@@ -33,4 +36,6 @@ export default function ClientInit() {
   }, [customer]);
 
   return null;
-}
+});
+
+export default ClientInit;

@@ -1,8 +1,10 @@
 'use client'
 
 import { shopifyStorefontFetch } from "@/lib/shopify-storefront";
+import { useUserStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
 import * as React from "react";
+import { useCallback } from "react";
 
 interface CustomerAccessTokenCreateInput {
   email: string;
@@ -22,6 +24,8 @@ const CUSTOMER_CREATE = `
 
 export default function Login() {
   const router = useRouter();
+  const { fetchCustomer } = useUserStore();
+  const stableFetchCustomer = useCallback(fetchCustomer, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -39,8 +43,10 @@ export default function Login() {
       });
 
       localStorage.setItem("accessToken", response.data.customerAccessTokenCreate.customerAccessToken.accessToken)
+      stableFetchCustomer(response.data.customerAccessTokenCreate.customerAccessToken.accessToken)
       router.push("/")
     } catch (error) {
+      console.error(error)
     }
   };
 

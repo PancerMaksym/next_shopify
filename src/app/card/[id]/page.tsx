@@ -4,7 +4,7 @@ import { useEffect, useState, use } from "react";
 import "@/style/cardPage.scss";
 import { shopifyStorefontFetch } from "@/lib/shopify-storefront";
 import { useUserStore } from "@/lib/store";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const PRODUCTS_QUERY = `
   query Product($id: ID) {
@@ -93,7 +93,8 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
   const [photoIdx, setPhotoIdx] = useState(0);
   const [product, setProduct] = useState<ProductData | null>(null);
   const [count, setCount] = useState(1);
-  const [selectedVar, setSelectedVar] = useState(0);
+  const searchParams = useSearchParams();
+  const varId = searchParams.get("variant") ?? product?.variants.nodes[0].id;
   const { cartId, setCartId, setCheckoutUrl, customer, setDbId } = useUserStore();
 
   const handleAddCart = async () => {
@@ -108,7 +109,7 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
             cartId: cartId,
             lines: [
               {
-                merchandiseId: product?.variants.nodes[selectedVar].id,
+                merchandiseId: varId,
                 quantity: count,
               },
             ],
@@ -121,7 +122,7 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
             input: {
               lines: [
                 {
-                  merchandiseId: product?.variants.nodes[selectedVar].id,
+                  merchandiseId: varId,
                   quantity: count,
                 },
               ],
@@ -134,13 +135,14 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
             body: JSON.stringify({ customer_id: customer?.id, cart_id: response.data.cartCreate.cart.id }),
           });
           const data = await res.json();
-          setDbId(data.id)
+          setDbId(await data.id)
           setCartId(response.data.cartCreate.cart.id);
           
           setCheckoutUrl(response.data.cartCreate.cart.checkoutUrl);
         }
       }
     } catch (error) {
+      console.error(error)
     }
   };
 
@@ -174,6 +176,12 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
     return <div>Loading</div>;
   }
 
+  const handleChangeVariant = (id: string) => {
+    const updatedUrl = new URL(window.location.href);
+    updatedUrl.searchParams.set("variant", (id).toString());
+    window.history.pushState({}, "", updatedUrl);
+  }
+
   return (
     <main>
       <div className="photoBlock">
@@ -196,8 +204,8 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
           return (
             <div
               key={index}
-              onClick={() => setSelectedVar(index)}
-              className={index === selectedVar ? "active var" : "var"}
+              onClick={() => handleChangeVariant(node.id)}
+              className={node.id === varId ? "active var" : "var"}
             >
               <Image
                 src={node.image?.url || "/placeholder.jpg"}

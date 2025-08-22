@@ -195,12 +195,6 @@ export default function Orders() {
     }
   };
 
-  useEffect(() => {
-    if (!customer) {
-      router.push("/registration");
-    }
-  });
-
   const getOrders = useCallback(async () => {
     const newOrders = [];
     if (customer) {
@@ -284,10 +278,14 @@ export default function Orders() {
     }
   };
 
-  if (!customer) {
+  if (customer === undefined) {
     return <div>Loading</div>;
   }
   
+  if(customer === null) {
+    router.push("/registration");
+  }
+
   return (
     <main className="order_page">
       {cart?.map((el, index) => (

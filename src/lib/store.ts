@@ -25,13 +25,13 @@ interface userStore {
   pageCount: number;
   cartId: string | null;
   checkoutUrl: string | null;
-  customer: Customer | null;
+  customer: Customer | null | undefined;
   orders: Order[] | null;
   dbId: number | null;
   setLoadedPages: (pageNum: number, newPage: ShopifyResponse) => void;
   setPageCount: (newCount: number) => void;
   setCartId: (id: string | null) => void;
-  setCustomer: (customer: Customer) => void;
+  setCustomer: (customer: Customer | null) => void;
   fetchCustomer: (token: string) => Promise<void>;
   setOrders: (orders: Order[]) => void;
   setCheckoutUrl: (newUrl: string | null) => void;
@@ -43,7 +43,7 @@ export const useUserStore = create<userStore>((set) => ({
   pageCount: 0,
   cartId: null,
   dbId: null,
-  customer: null,
+  customer: undefined,
   orders: null,
   checkoutUrl: null,
 
@@ -71,11 +71,12 @@ export const useUserStore = create<userStore>((set) => ({
         query: GET_CUSTOMER,
         variables: { customerAccessToken: token },
       });
-
-      if (response.data?.customer) {
+      console.log("resp", response)
+      if (response) {
         set({ customer: response.data.customer });
       }
     } catch (error) {
+      set({ customer: null });
       console.error("Error fetching customer:", error);
     }
   },

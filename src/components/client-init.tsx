@@ -13,6 +13,7 @@ const ClientInit = memo(() => {
         const response = await fetch(`/api/users?customer_id=${customer.id}`);
         const data = await response.json();
         if (data) {
+          console.log("data: ", data)
           setCartId(data.cart_id);
           setDbId(data.id);
         }

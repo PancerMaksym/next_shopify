@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { ShopifyResponse, Pages, Customer, Order } from "./types";
 import { shopifyStorefontFetch } from "./shopify-storefront";
+import { error } from "console";
 
 const GET_CUSTOMER = `
   query customer($customerAccessToken: String!){
@@ -72,8 +73,10 @@ export const useUserStore = create<userStore>((set) => ({
         variables: { customerAccessToken: token },
       });
       console.log("resp", response)
-      if (response) {
+      if (response.data.customer) {
         set({ customer: response.data.customer });
+      }else {
+        throw new Error(response.errors)
       }
     } catch (error) {
       set({ customer: null });

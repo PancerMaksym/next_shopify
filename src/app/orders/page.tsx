@@ -6,7 +6,7 @@ import {
   Cart,
   CartLinesRemoveResponse,
   CartLinesUpdateResponse,
-  orderInput,
+  OrderCreateOrderInput,
   GetCartResponse,
 } from "@/lib/types";
 import "@/style/order.scss";
@@ -16,6 +16,7 @@ import enLocale from "i18n-iso-countries/langs/en.json";
 import { shopifyStorefontFetch } from "@/lib/shopify-storefront";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 
 countries.registerLocale(enLocale);
 
@@ -28,6 +29,29 @@ const CREATE_ORDER = `
       userErrors {
         field
         message
+      }
+    }
+  }
+`;
+
+const UPDATE_IDENTUTY = `
+  mutation cartBuyerIdentityUpdate($cartId: ID!, $buyerIdentity: CartBuyerIdentityInput!) {
+    cartBuyerIdentityUpdate(cartId: $cartId, buyerIdentity: $buyerIdentity) {
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+
+const UPDATE_DELIVERY = `
+  mutation CartDeliveryAddressesAdd($id: ID!, $addresses: [CartSelectableAddressInput!]!) {
+    cartDeliveryAddressesAdd(cartId: $id, addresses: $addresses) {
+      userErrors {
+        message
+        code
+        field
       }
     }
   }
@@ -66,6 +90,9 @@ const GET_CART = `
               ... on ProductVariant {
                 id
                 title
+                price {
+                  amount
+                }
                 product {
                   id
                   title
@@ -109,18 +136,15 @@ const REMOVE_CART = `
 `;
 
 export default function Orders() {
-  const { cartId, customer, orders, setOrders, dbId, setCartId, setDbId } = useUserStore();
+  const {
+    cartId,
+    customer,
+    orders,
+    setOrders,
+  } = useUserStore();
 
   const router = useRouter();
   const [cart, setCart] = useState<Cart[]>([]);
-  const [address, setAddress] = useState<Address>({
-    address1: "",
-    city: "",
-    countryCode: "",
-    province: "",
-    zip: "",
-  });
-  const [email, setEmail] = useState<string>("");
 
   const getCart = useCallback(async () => {
     try {
@@ -140,6 +164,7 @@ export default function Orders() {
             merchandise: {
               id: edge.node.merchandise.id,
               title: edge.node.merchandise.title,
+              price: edge.node.merchandise.price,
               product: {
                 id: edge.node.merchandise.product.id,
                 title: edge.node.merchandise.product.title,
@@ -220,69 +245,11 @@ export default function Orders() {
     getOrders();
   }, [customer]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    if (name === "email") {
-      setEmail(value);
-    } else {
-      setAddress((prev) => ({
-        ...prev,
-
-        [name]:
-          name === "countryCode"
-            ? !!countries.getAlpha2Code(value, "en")
-              ? countries.getAlpha2Code(value, "en")
-              : value
-            : value,
-      }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (customer) {
-      const orderInput: orderInput = {
-        lineItems: cart.map((el) => {
-          return {
-            productId: el.id,
-            quantity: el.quantity,
-            variantId: el.merchandise.product.id,
-          };
-        }),
-        customer: {
-          toAssociate: {
-            id: customer?.id,
-          },
-        },
-        billingAddress: address,
-      };
-
-      const result = await fetch("/api/admin-request", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: CREATE_ORDER,
-          variables: { input: orderInput },
-        }),
-      });
-      const data = await result.json();
-      const response = await fetch(`/api/users?id=${dbId}`, {
-        method: "DELETE",
-      });
-
-      if(response){
-        setDbId(null)
-        setCart([])
-        setCartId(null)
-      }
-    }
-  };
-
   if (customer === undefined) {
     return <div>Loading</div>;
   }
-  
-  if(customer === null) {
+
+  if (customer === null) {
     router.push("/registration");
   }
 
@@ -296,57 +263,8 @@ export default function Orders() {
         </div>
       ))}
 
-      <form onSubmit={handleSubmit} className="personal_data">
-        <input
-          type="text"
-          name="address1"
-          placeholder="Addres"
-          value={address.address1}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="text"
-          name="city"
-          placeholder="City"
-          value={address.city}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="text"
-          name="countryCode"
-          placeholder="Country Code (e.g. UA)"
-          value={address.countryCode}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="text"
-          name="province"
-          placeholder="Province"
-          value={address.province}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="text"
-          name="zip"
-          placeholder="Zip"
-          value={address.zip}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="text"
-          name="email"
-          placeholder="Email"
-          value={email}
-          onChange={handleChange}
-          required
-        />
-        <button type="submit">Submit</button>
-      </form>
+      <Link href="/orders/payment">Go to payment</Link>
+
       <div className="orders">
         <h2>Orders:</h2>
         {orders?.map((order) => (

@@ -8,8 +8,8 @@ export async function shopifyStorefontFetch<TVariables extends Record<string, un
   variables?: TVariables;
 }) {
   const endpoint = process.env.NEXT_PUBLIC_SHOPIFY_STORE_DOMAIN;
-  const key = process.env.NEXT_PUBLIC_SHOPIFY_STOREFRONT_ACCESS_TOKEN;
-
+  const key = process.env.NEXT_PUBLIC_STOREFRONT_ACCESS_TOKEN;
+  
   try {
     const result = await fetch(`https://${endpoint}/api/2025-07/graphql.json`, {
       method: "POST",

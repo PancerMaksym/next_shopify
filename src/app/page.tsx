@@ -2,7 +2,7 @@
 
 import "@/style/page.scss";
 import { useCallback, useEffect, useState } from "react";
-import Card from "@/components/Card";
+import Card from "@/components/card";
 import { shopifyStorefontFetch } from "@/lib/shopify-storefront";
 import { useSearchParams } from "next/navigation";
 import { CountPage, Pages, ShopifyResponse } from "@/lib/types";

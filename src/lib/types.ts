@@ -76,6 +76,9 @@ export interface Cart {
   merchandise: {
     id: string;
     title: string;
+    price: {
+      amount: number;
+    };
     product: {
       id: string;
       title: string;
@@ -92,23 +95,15 @@ export interface Address {
   zip: string;
 }
 
-export interface orderInput {
-  lineItems: {
-    productId: string;
-    quantity: number;
-    variantId: string;
-  }[];
-  customer: {
-    toAssociate: {
-      id: string;
-    }
-  }
-  billingAddress: Address;
+export interface OrderCreateOrderInput {
+  customerAccessToken: string;
+  email: string;
 }
 
 export interface GetCartResponse {
   data: {
     cart: {
+      checkoutUrl: string,
       lines: {
         edges: {
           node: Cart;

@@ -94,7 +94,7 @@ const Payment = () => {
       setCart(null);
       console.error("Error fetching cart:", error);
     }
-  }, [customer, cartId]);
+  }, [cartId]);
 
   const getPaymentIntents = useCallback(async () => {
     try {

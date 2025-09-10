@@ -47,7 +47,9 @@ export default function  Registration () {
         query: CUSTOMER_CREATE,
         variables: { input: customerInput },
       });
-
+      if(response.error){
+        console.error("Error: ", response.error)
+      }
 			router.push("/login")
     } catch (error) {
       console.error("Error creating customer:", error);

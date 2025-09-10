@@ -55,6 +55,10 @@ const CheckoutPage = ({
         method: "DELETE",
       });
 
+      if(!res){
+        console.error("Error")
+      }
+
       const orderInput = {
         order: {
           customer: {
@@ -91,6 +95,9 @@ const CheckoutPage = ({
           variables: { order: orderInput },
         }),
       });
+      if(!result){
+        console.error("Error")
+      }
     }
   };
 

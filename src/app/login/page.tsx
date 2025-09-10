@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import { shopifyStorefontFetch } from "@/lib/shopify-storefront";
 import { useUserStore } from "@/lib/store";
@@ -42,23 +42,31 @@ export default function Login() {
         variables: { input: customerAccessTokenCreateInput },
       });
 
-      localStorage.setItem("accessToken", response.data.customerAccessTokenCreate.customerAccessToken.accessToken)
-      stableFetchCustomer(response.data.customerAccessTokenCreate.customerAccessToken.accessToken)
-      router.push("/")
+      const tokenData =
+        response.data.customerAccessTokenCreate.customerAccessToken;
+
+      if (tokenData) {
+        localStorage.setItem("accessToken", tokenData.accessToken);
+        stableFetchCustomer(tokenData.accessToken);
+        router.push("/");
+      } else {
+        console.error(
+          "Failed to create customer access token",
+          response.data.customerAccessTokenCreate
+        );
+        alert("Invalid login credentials");
+      }
+
+      router.push("/");
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
   };
 
   return (
     <main>
       <form onSubmit={handleSubmit}>
-        <input 
-          type="text" 
-          name="email" 
-          placeholder="Email" 
-          required 
-        />
+        <input type="text" name="email" placeholder="Email" required />
         <input
           type="password"
           name="password"

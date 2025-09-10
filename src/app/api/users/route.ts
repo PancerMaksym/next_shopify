@@ -13,26 +13,34 @@ export async function GET(req: Request) {
   }
 
   try {
-    const users = await prisma.cart.findFirst({
+    const user = await prisma.cart.findFirst({
       where: { customer_id },
     });
-    return NextResponse.json(users);
-  } catch (err) {
-    return NextResponse.json({ error: err }, { status: 500 });
+    return NextResponse.json(user);
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: "Unknown error" }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
-  const body = await req.json();
-
-  const newUser = await prisma.cart.create({
-    data: {
-      customer_id: body.customer_id,
-      cart_id: body.cart_id,
-    },
-  });
-
-  return NextResponse.json(newUser);
+  try {
+    const body = await req.json();
+    const newUser = await prisma.cart.create({
+      data: {
+        customer_id: body.customer_id,
+        cart_id: body.cart_id,
+      },
+    });
+    return NextResponse.json(newUser);
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: "Unknown error" }, { status: 500 });
+  }
 }
 
 export async function DELETE(req: Request) {
@@ -45,7 +53,7 @@ export async function DELETE(req: Request) {
 
   try {
     const deleted = await prisma.cart.delete({
-      where: { id: Number(id) },
+      where: { id: Number(id) }, // бо id у схемі Int
     });
     return NextResponse.json(deleted);
   } catch (err: unknown) {

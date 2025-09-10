@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { ShopifyResponse, Pages, Customer, Order } from "./types";
 import { shopifyStorefontFetch } from "./shopify-storefront";
-import { error } from "console";
 
 const GET_CUSTOMER = `
   query customer($customerAccessToken: String!){

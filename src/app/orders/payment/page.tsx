@@ -6,7 +6,6 @@ import { useUserStore } from "@/lib/store";
 import { Cart, GetCartResponse } from "@/lib/types";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
-import { useSearchParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
@@ -58,7 +57,7 @@ const Payment = () => {
   const getCart = useCallback(async () => {
     try {
       let after: string | null = null;
-      let items: Cart[] = [];
+      const items: Cart[] = [];
 
       while (true) {
         const response: GetCartResponse = await shopifyStorefontFetch({
@@ -95,7 +94,7 @@ const Payment = () => {
       setCart(null);
       console.error("Error fetching cart:", error);
     }
-  }, [customer]);
+  }, [customer, cartId]);
 
   const getPaymentIntents = useCallback(async () => {
     try {
@@ -115,12 +114,14 @@ const Payment = () => {
           setClientSecret(data.clientSecret);
         }
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error("Error: ", error)
+    }
   }, [amount, customer]);
 
   useEffect(() => {
     getCart();
-  }, [customer]);
+  }, [customer, getCart]);
 
   useEffect(() => {
     if (!cart) return;
@@ -135,7 +136,7 @@ const Payment = () => {
 
   useEffect(() => {
     getPaymentIntents();
-  }, [amount]);
+  }, [amount, getPaymentIntents]);
 
   if (cart === undefined || !clientSecret) {
     return <div>Loading...</div>;

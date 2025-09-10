@@ -1,17 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+  apiVersion: "2025-07-30.basil"
+});
+
+interface CartItem {
+  merchandise: {
+    product: {
+      title: string;
+    };
+    price: {
+      amount: number;
+    };
+  };
+  quantity: number;
+}
+
 
 export async function POST(request: NextRequest) {
   try {
     const { cart, customerId } = await request.json();
 
     const checkoutSession: Stripe.Checkout.Session =
-      await stripe.checkout.session.create({
+      await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         mode: "payment",
-        line_items: cart.map((item: any) => ({
+        line_items: cart.map((item: CartItem) => ({
           price_data: {
             currency: "usd",
             product_data: {

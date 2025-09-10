@@ -115,6 +115,10 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
             ],
           },
         });
+
+        if(response.error){
+          console.error("Error: ", response.error)
+        }
       } else {
         const response = await shopifyStorefontFetch({
           query: CART_CREATE,

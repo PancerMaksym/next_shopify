@@ -1,12 +1,8 @@
 "use client";
-//import { shopifyStorefontFetch } from "@/lib/shopify-storefront";
 import { useUserStore } from "@/lib/store";
 import {
-  Address,
   Cart,
   CartLinesRemoveResponse,
-  CartLinesUpdateResponse,
-  OrderCreateOrderInput,
   GetCartResponse,
 } from "@/lib/types";
 import "@/style/order.scss";
@@ -15,58 +11,9 @@ import countries from "i18n-iso-countries";
 import enLocale from "i18n-iso-countries/langs/en.json";
 import { shopifyStorefontFetch } from "@/lib/shopify-storefront";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 
 countries.registerLocale(enLocale);
-
-const CREATE_ORDER = `
-  mutation orderCreate($order: OrderCreateOrderInput!) {
-    orderCreate(order: $order) {
-      order {
-        id
-      }
-      userErrors {
-        field
-        message
-      }
-    }
-  }
-`;
-
-const UPDATE_IDENTUTY = `
-  mutation cartBuyerIdentityUpdate($cartId: ID!, $buyerIdentity: CartBuyerIdentityInput!) {
-    cartBuyerIdentityUpdate(cartId: $cartId, buyerIdentity: $buyerIdentity) {
-      userErrors {
-        field
-        message
-      }
-    }
-  }
-`;
-
-const UPDATE_DELIVERY = `
-  mutation CartDeliveryAddressesAdd($id: ID!, $addresses: [CartSelectableAddressInput!]!) {
-    cartDeliveryAddressesAdd(cartId: $id, addresses: $addresses) {
-      userErrors {
-        message
-        code
-        field
-      }
-    }
-  }
-`;
-
-const CATR_ADD_IDENTITY = `
-  mutation cartBuyerIdentityUpdate($cartId: ID!, $buyerIdentity: CartBuyerIdentityInput!) {
-    cartBuyerIdentityUpdate(cartId: $cartId, buyerIdentity: $buyerIdentity) {
-      userErrors {
-        field
-        message
-      }
-    }
-  }
-`;
 
 const GET_ORDER = `
   query order($id: ID!) {
@@ -111,7 +58,7 @@ const GET_CART = `
   }
 `;
 
-const UPDATE_CART = `
+/*const UPDATE_CART = `
   mutation cartLinesUpdate($cartId: ID!, $lines: CartLineUpdateInput) {
     cartLinesUpdate(cartId:$cartId, lines:$lines){
       cart{
@@ -123,7 +70,7 @@ const UPDATE_CART = `
       }
     }
   }
-`;
+`;*/
 
 const REMOVE_CART = `
   mutation cartLinesRemove($cartId: ID!, $lineIds: [ID!]!) {
@@ -149,7 +96,7 @@ export default function Orders() {
   const getCart = useCallback(async () => {
     try {
       let after: string | null = null;
-      let items = [];
+      const items = [];
 
       while (true) {
         const response: GetCartResponse = await shopifyStorefontFetch({
@@ -185,9 +132,9 @@ export default function Orders() {
     } catch (error) {
       console.error("Error fetching cart:", error);
     }
-  }, [customer]);
+  }, [cartId]);
 
-  const updateCart = async () => {
+  /*const updateCart = async () => {
     try {
       const response: CartLinesUpdateResponse = await shopifyStorefontFetch({
         query: UPDATE_CART,
@@ -203,7 +150,7 @@ export default function Orders() {
     } catch (error) {
       console.error("Error updating cart:", error);
     }
-  };
+  };*/
 
   const removeCart = async (lineId: string) => {
     try {
@@ -238,12 +185,12 @@ export default function Orders() {
 
       setOrders(newOrders);
     }
-  }, [customer]);
+  }, [customer, setOrders]);
 
   useEffect(() => {
     getCart();
     getOrders();
-  }, [customer]);
+  }, [customer, getCart, getOrders]);
 
   if (customer === undefined) {
     return <div>Loading</div>;
@@ -267,10 +214,10 @@ export default function Orders() {
 
       <div className="orders">
         <h2>Orders:</h2>
-        {orders?.map((order) => (
-          <div className="order">
-            {order.order.lineItems.edges.map((edge) => (
-              <div className="line">
+        {orders?.map((order, index) => (
+          <div className="order" key={index}>
+            {order.order.lineItems.edges.map((edge, order_index) => (
+              <div className="line" key={order_index}>
                 <div>{edge.node.varant.title}</div>
               </div>
             ))}

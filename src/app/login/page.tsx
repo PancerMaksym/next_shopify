@@ -25,7 +25,7 @@ const CUSTOMER_CREATE = `
 export default function Login() {
   const router = useRouter();
   const { fetchCustomer } = useUserStore();
-  const stableFetchCustomer = useCallback(fetchCustomer, []);
+  const stableFetchCustomer = useCallback(fetchCustomer, [fetchCustomer]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

@@ -6,7 +6,10 @@ export async function GET(req: Request) {
   const customer_id = url.searchParams.get("customer_id");
 
   if (!customer_id) {
-    return NextResponse.json({ error: "customer_id required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "customer_id required" },
+      { status: 400 }
+    );
   }
 
   try {
@@ -45,8 +48,10 @@ export async function DELETE(req: Request) {
       where: { id: Number(id) },
     });
     return NextResponse.json(deleted);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: "Unknown error" }, { status: 500 });
   }
 }
-

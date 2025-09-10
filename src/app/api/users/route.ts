@@ -17,11 +17,8 @@ export async function GET(req: Request) {
       where: { customer_id },
     });
     return NextResponse.json(user);
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      return NextResponse.json({ error: err.message }, { status: 500 });
-    }
-    return NextResponse.json({ error: "Unknown error" }, { status: 500 });
+  } catch (err) {
+    console.error("Error: ", err);
   }
 }
 
@@ -35,11 +32,8 @@ export async function POST(req: Request) {
       },
     });
     return NextResponse.json(newUser);
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      return NextResponse.json({ error: err.message }, { status: 500 });
-    }
-    return NextResponse.json({ error: "Unknown error" }, { status: 500 });
+  } catch (err) {
+    console.error("Error: ", err);
   }
 }
 
@@ -56,10 +50,7 @@ export async function DELETE(req: Request) {
       where: { id: Number(id) }, // бо id у схемі Int
     });
     return NextResponse.json(deleted);
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      return NextResponse.json({ error: err.message }, { status: 500 });
-    }
-    return NextResponse.json({ error: "Unknown error" }, { status: 500 });
+  } catch (err) {
+    console.error("Error: ", err);
   }
 }

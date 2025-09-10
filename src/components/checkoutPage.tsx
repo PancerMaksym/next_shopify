@@ -51,13 +51,9 @@ const CheckoutPage = ({
     });
 
     if (checkoutSession.status === 200) {
-      const res = await fetch(`/api/users?id=${customerId}`, {
+      await fetch(`/api/users?id=${customerId}`, {
         method: "DELETE",
       });
-
-      if(!res){
-        console.error("Error")
-      }
 
       const orderInput = {
         order: {
@@ -87,7 +83,7 @@ const CheckoutPage = ({
         },
       };
 
-      const result = await fetch("/api/admin-request", {
+      await fetch("/api/admin-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -95,9 +91,6 @@ const CheckoutPage = ({
           variables: { order: orderInput },
         }),
       });
-      if(!result){
-        console.error("Error")
-      }
     }
   };
 

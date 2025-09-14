@@ -8,6 +8,7 @@ import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import "@/style/payment.scss"
 
 if (process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY === undefined) {
   throw new Error("No NEXT_PUBLIC_STRIPE_PUBLIC_KEY");
@@ -73,6 +74,7 @@ const Payment = () => {
               id: edge.node.merchandise.id,
               title: edge.node.merchandise.title,
               price: edge.node.merchandise.price,
+              image: edge.node.merchandise.image,
               product: {
                 id: edge.node.merchandise.product.id,
                 title: edge.node.merchandise.product.title,
@@ -127,7 +129,7 @@ const Payment = () => {
     if (!cart) return;
 
     const totalAmount = cart.reduce(
-      (acc, el) => acc + el.merchandise.price.amount * el.quantity,
+      (acc, el) => acc + Number(el.merchandise.price.amount) * el.quantity,
       0
     );
     console.log("totalAmount", totalAmount);
@@ -147,9 +149,8 @@ const Payment = () => {
   }
 
   if (customer && cart && amount && clientSecret !== undefined) {
-    console.log("Total: ", amount);
     return (
-      <main className="payment">
+      <main className="payment_page">
         <Elements
           stripe={stripePromise}
           options={{ clientSecret }}

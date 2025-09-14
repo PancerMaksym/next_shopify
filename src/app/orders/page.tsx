@@ -1,10 +1,6 @@
 "use client";
 import { useUserStore } from "@/lib/store";
-import {
-  Cart,
-  CartLinesRemoveResponse,
-  GetCartResponse,
-} from "@/lib/types";
+import { Cart, CartLinesRemoveResponse, GetCartResponse } from "@/lib/types";
 import "@/style/order.scss";
 import { useCallback, useEffect, useState } from "react";
 import countries from "i18n-iso-countries";
@@ -12,6 +8,7 @@ import enLocale from "i18n-iso-countries/langs/en.json";
 import { shopifyStorefontFetch } from "@/lib/shopify-storefront";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 countries.registerLocale(enLocale);
 
@@ -39,6 +36,9 @@ const GET_CART = `
                 title
                 price {
                   amount
+                }
+                image {
+                  url
                 }
                 product {
                   id
@@ -83,12 +83,7 @@ const REMOVE_CART = `
 `;
 
 export default function Orders() {
-  const {
-    cartId,
-    customer,
-    orders,
-    setOrders,
-  } = useUserStore();
+  const { cartId, customer, orders, setOrders } = useUserStore();
 
   const router = useRouter();
   const [cart, setCart] = useState<Cart[]>([]);
@@ -112,6 +107,7 @@ export default function Orders() {
               id: edge.node.merchandise.id,
               title: edge.node.merchandise.title,
               price: edge.node.merchandise.price,
+              image: edge.node.merchandise.image,
               product: {
                 id: edge.node.merchandise.product.id,
                 title: edge.node.merchandise.product.title,
@@ -127,7 +123,7 @@ export default function Orders() {
           after = response.data?.cart.lines.pageInfo.endCursor;
         }
       }
-
+      console.log("Cart: ", items);
       setCart(items);
     } catch (error) {
       console.error("Error fetching cart:", error);
@@ -168,29 +164,33 @@ export default function Orders() {
   };
 
   const getOrders = useCallback(async () => {
-    const newOrders = [];
-    if (customer) {
-      for (const edge of customer?.orders.edges) {
-        const result = await fetch("/api/admin-request", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            query: GET_ORDER,
-            variables: { id: edge.node.id },
-          }),
-        });
-        const data = await result.json();
-        newOrders.push(data);
-      }
+    try {
+      const newOrders = [];
+      if (customer) {
+        for (const edge of customer?.orders.edges) {
+          const result = await fetch("/api/admin-request", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              query: GET_ORDER,
+              variables: { id: edge.node.id },
+            }),
+          });
+          const data = await result.json();
+          newOrders.push(data);
+        }
 
-      setOrders(newOrders);
+        setOrders(newOrders);
+      }
+    } catch (error) {
+      console.error("Error: ", error);
     }
   }, [customer, setOrders]);
 
   useEffect(() => {
     getCart();
     getOrders();
-  }, [customer, getCart, getOrders]);
+  }, [cartId, customer, getCart, getOrders]);
 
   if (customer === undefined) {
     return <div>Loading</div>;
@@ -202,15 +202,35 @@ export default function Orders() {
 
   return (
     <main className="order_page">
-      {cart?.map((el, index) => (
-        <div key={index} className="order">
-          <div>{el.merchandise.product.title}</div>
-          <div>{el.quantity} </div>
-          <button onClick={() => removeCart(el.id)}>Delete</button>
-        </div>
-      ))}
+      <div className="card">
+        {cart?.map((el, index) => {
+          return (
+            <div key={index} className="card_el">
+              <Image
+                src={el.merchandise.image.url}
+                alt={el.merchandise.product.title}
+                width={900}
+                height={1600}
+              />
+              <h3 className="title">{el.merchandise.product.title}</h3>
+              <div className="quantity">{el.quantity} </div>
+              <div className="buttons">
+                <Link
+                  href={`/card/${encodeURIComponent(
+                    el.merchandise.product.id
+                  )}?variant=${encodeURIComponent(el.merchandise.id)}`}
+                >
+                  Visit
+                </Link>
 
-      <Link href="/orders/payment">Go to payment</Link>
+                <button onClick={() => removeCart(el.id)}>Delete</button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <Link className="payment" href="/orders/payment">Go to payment</Link>
 
       <div className="orders">
         <h2>Orders:</h2>

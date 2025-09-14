@@ -52,7 +52,7 @@ export default function Home() {
     useUserStore();
 
   const page =
-    pageParam > pageCount ? pageCount - 1 : pageParam < 1 ? 0 : pageParam - 1;
+    pageParam > pageCount ? pageCount : pageParam < 1 ? 1 : pageParam;
 
   const handleOnClick = (variant: "Next" | "Prev" | number) => {
     let delta: number = 0;
@@ -66,13 +66,28 @@ export default function Home() {
     }
 
     const updatedUrl = new URL(window.location.href);
-    updatedUrl.searchParams.set("page", (page + delta + 1).toString());
+    updatedUrl.searchParams.set("page", (page + delta).toString());
     window.history.pushState({}, "", updatedUrl);
 
     window.dispatchEvent(new Event("popstate"));
   };
 
+  const fetchProducts = useCallback(async () => {
+    console.log("fetch");
+    const newData: ShopifyResponse = await shopifyStorefontFetch({
+      query: PRODUCTS_QUERY,
+      variables: {
+        first: 4,
+        after: cursor,
+      },
+    });
+
+    setLoadedPages(page, newData);
+    setStore(newData);
+  }, [cursor, page, setLoadedPages]);
+
   const findCursor = useCallback(async () => {
+    console.log("Cursor,", page);
     const response = await shopifyStorefontFetch({
       query: PAGE_QUERY,
       variables: {
@@ -82,7 +97,8 @@ export default function Home() {
 
     const after = response.data?.products.pageInfo.endCursor;
     setCursor(after);
-  }, [page]);
+    fetchProducts();
+  }, [page, fetchProducts]);
 
   const checkExist = useCallback(() => {
     const existing = loadedPages.find((el: Pages) => el.page === page);
@@ -92,18 +108,6 @@ export default function Home() {
       findCursor();
     }
   }, [page, loadedPages, findCursor]);
-
-  const fetchProducts = useCallback(async () => {
-    const newData: ShopifyResponse = await shopifyStorefontFetch({
-      query: PRODUCTS_QUERY,
-      variables: {
-        after: cursor,
-      },
-    });
-
-    setLoadedPages(page, newData);
-    setStore(newData);
-  }, [cursor, page, setLoadedPages]);
 
   const getPage = async () => {
     if (pageCount === 0) {
@@ -133,57 +137,46 @@ export default function Home() {
     checkExist();
   }, [page, checkExist]);
 
-  useEffect(() => {
-    if (page === 0 || cursor !== null) {
-      fetchProducts();
-    }
-  }, [cursor, fetchProducts, page]);
-
   return (
-    <div className={"page"}>
-      <main className={"main"}>
-        <div className="products">
-          {store?.data?.products?.edges?.map(({ node }) => (
-            <Card
-              photo={node?.images.nodes[0]?.url}
-              title={node.title}
-              id={node.id}
-              key={node.id}
-            />
-          ))}
-        </div>
+    <main className={"page"}>
+      <div className="products">
+        {store?.data?.products?.edges?.map(({ node }) => (
+          <Card
+            photo={node?.images.nodes[0]?.url}
+            title={node.title}
+            id={node.id}
+            key={node.id}
+          />
+        ))}
+      </div>
 
-        <div className="buttons">
+      <div className="buttons">
+        <button
+          disabled={
+            store?.data?.products?.pageInfo?.hasPreviousPage ? false : true
+          }
+          onClick={() => handleOnClick("Prev")}
+        >
+          Prev
+        </button>
+        {[...Array(pageCount)].map((_, index) => (
           <button
-            disabled={
-              store?.data?.products?.pageInfo?.hasPreviousPage ? false : true
-            }
-            onClick={() => handleOnClick("Prev")}
+            onClick={() => {
+              if (page !== index) handleOnClick(index);
+            }}
+            key={index}
+            className={page === index + 1 ? "active button" : "button"}
           >
-            Prev
+            {index + 1}
           </button>
-          {[...Array(pageCount)].map((_, index) => (
-            <button
-              onClick={() => {
-                if (page !== index) handleOnClick(index);
-              }}
-              key={index}
-              className={page === index ? "active button" : "button"}
-            >
-              {index + 1}
-            </button>
-          ))}
-          <button
-            disabled={
-              store?.data?.products?.pageInfo?.hasNextPage ? false : true
-            }
-            onClick={() => handleOnClick("Next")}
-          >
-            Next
-          </button>
-        </div>
-      </main>
-      <footer className={"footer"}></footer>
-    </div>
+        ))}
+        <button
+          disabled={store?.data?.products?.pageInfo?.hasNextPage ? false : true}
+          onClick={() => handleOnClick("Next")}
+        >
+          Next
+        </button>
+      </div>
+    </main>
   );
 }

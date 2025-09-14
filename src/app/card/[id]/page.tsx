@@ -89,13 +89,15 @@ interface ProductData {
 const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
   const router = useRouter();
   const decodedParam: { id: string } = use(params);
-  const id = decodeURIComponent(decodedParam.id);
+  const fullId = decodeURIComponent(decodedParam.id);
+  const id = fullId.split("?")[0];
+  const searchParams = useSearchParams();
   const [photoIdx, setPhotoIdx] = useState(0);
   const [product, setProduct] = useState<ProductData | null>(null);
   const [count, setCount] = useState(1);
-  const searchParams = useSearchParams();
   const varId = searchParams.get("variant") ?? product?.variants.nodes[0].id;
-  const { cartId, setCartId, setCheckoutUrl, customer, setDbId } = useUserStore();
+  const { cartId, setCartId, setCheckoutUrl, customer, setDbId } =
+    useUserStore();
 
   const handleAddCart = async () => {
     if (!localStorage.getItem("accessToken")) {
@@ -116,8 +118,8 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
           },
         });
 
-        if(response.error){
-          console.error("Error: ", response.error)
+        if (response.error) {
+          console.error("Error: ", response.error);
         }
       } else {
         const response = await shopifyStorefontFetch({
@@ -136,18 +138,27 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
         if (response) {
           const res = await fetch("/api/users", {
             method: "POST",
-            body: JSON.stringify({ customer_id: customer?.id, cart_id: response.data.cartCreate.cart.id }),
+            body: JSON.stringify({
+              customer_id: customer?.id,
+              cart_id: response.data.cartCreate.cart.id,
+            }),
           });
           const data = await res.json();
-          setDbId(await data.id)
+          setDbId(await data.id);
           setCartId(response.data.cartCreate.cart.id);
-          
+
           setCheckoutUrl(response.data.cartCreate.cart.checkoutUrl);
         }
       }
     } catch (error) {
-      console.error(error)
+      console.error(error);
     }
+  };
+
+  const handleChangeVariant = (id: string) => {
+    const updatedUrl = new URL(window.location.href);
+    updatedUrl.searchParams.set("variant", id.toString());
+    window.history.pushState({}, "", updatedUrl);
   };
 
   const setNewData = async () => {
@@ -180,71 +191,85 @@ const CardPage = ({ params }: { params: Promise<{ id: string }> }) => {
     return <div>Loading</div>;
   }
 
-  const handleChangeVariant = (id: string) => {
-    const updatedUrl = new URL(window.location.href);
-    updatedUrl.searchParams.set("variant", (id).toString());
-    window.history.pushState({}, "", updatedUrl);
+  if (!varId) {
+    return <h1>Loading...</h1>;
   }
-
   return (
-    <main>
-      <div className="photoBlock">
-        {product.images.nodes.length > 1 ? (
-          <button onClick={handlePrevPhoto}>&lt;</button>
-        ) : null}
+    <main className="card_page">
+      <div className="main_part">
+        <div className="photoBlock">
+          {product.images.nodes.length > 1 ? (
+            <button onClick={handlePrevPhoto}>&lt;</button>
+          ) : null}
 
-        <Image
-          src={product?.images.nodes[photoIdx]?.url || "/placeholder.jpg"}
-          alt={product?.title || "Product image"}
-          width={900}
-          height={1600}
-        />
-        {product.images.nodes.length > 1 ? (
-          <button onClick={handleNextPhoto}>&gt;</button>
-        ) : null}
-      </div>
-      <div className="variants">
-        {product.variants.nodes.map((node, index) => {
-          return (
-            <div
-              key={index}
-              onClick={() => handleChangeVariant(node.id)}
-              className={node.id === varId ? "active var" : "var"}
-            >
-              <Image
-                src={node.image?.url || "/placeholder.jpg"}
-                alt={node.title}
-                width={200}
-                height={300}
-              />
-              <div>${node.price.amount}</div>
-            </div>
-          );
-        })}
-      </div>
-
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-        }}
-      >
-        <div>
-          <button onClick={() => setCount((prev) => prev - 1)}>-</button>
-          <input
-            type="number"
-            value={count}
-            onChange={(e) => setCount(parseInt(e.target.value) || 0)}
-            min={1}
+          <Image
+            src={product?.images.nodes[photoIdx]?.url || "/placeholder.jpg"}
+            alt={product?.title || "Product image"}
+            width={900}
+            height={1600}
           />
-          <button onClick={() => setCount((prev) => prev + 1)}>+</button>
+          {product.images.nodes.length > 1 ? (
+            <button onClick={handleNextPhoto}>&gt;</button>
+          ) : null}
         </div>
-        <button type="submit" onClick={() => handleAddCart()}>
-          Add
-        </button>
-      </form>
+      </div>
+      <div className="info_part">
+        <h1>{product.title}</h1>
+        <h3>
+          {
+            product.variants.nodes[
+              product.variants.nodes.findIndex((el) => el.id === varId)
+            ].price.amount
+          }
+        </h3>
+        <div className="variants">
+          {product.variants.nodes.map((node, index) => {
+            return (
+              <div
+                key={index}
+                onClick={() => handleChangeVariant(node.id)}
+                className={node.id === varId ? "active var" : "var"}
+              >
+                <Image
+                  src={node.image?.url || "/placeholder.jpg"}
+                  alt={node.title}
+                  width={200}
+                  height={300}
+                />
+              </div>
+            );
+          })}
+        </div>
 
-      <h3>{product.title}</h3>
-      <h4>{product.description}</h4>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+          }}
+        >
+          <div className="input">
+            <button
+              onClick={() => (count > 1 ? setCount((prev) => prev - 1) : null)}
+            >
+              -
+            </button>
+            <input
+              type="number"
+              value={count}
+              onChange={(e) => setCount(parseInt(e.target.value) || 0)}
+              min={1}
+            />
+            <button onClick={() => setCount((prev) => prev + 1)}>+</button>
+          </div>
+          <button
+            className="submit"
+            type="submit"
+            onClick={() => handleAddCart()}
+          >
+            Add to Card
+          </button>
+        </form>
+        <h4>{product.description}</h4>
+      </div>
     </main>
   );
 };

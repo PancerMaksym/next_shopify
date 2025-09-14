@@ -1,12 +1,96 @@
-.order{
+@use "./variables" as *;
+
+.order_page {
+  .orders {
+    margin-top: 32px;
     display: flex;
     flex-direction: row;
-    gap: 32px
-}
+    gap: 24px;
+  }
 
-.personal_data{
+  .payment {
+    background-color: $orange;
+    padding: 18px 32px;
+    font-size: 16px;
+    font-weight: 700;
+    border: 0;
+    border-radius: 16px;
+    color: white;
+    margin-top: 8px;
+
+    &:hover {
+      background-color: #e7531e;
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+
+  .card {
+    width: auto;
+    max-width: 100%;
     display: flex;
-    flex-direction: column;
-    gap: 8px;
-    width: 10rem;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 16px;
+    border: 0;
+    padding: 0;
+
+    margin-bottom: 32px;
+
+    .card_el {
+      width: 12rem;
+      height: auto;
+      border: 1px $white dotted;
+      border-radius: 16px;
+      padding: 8px;
+      color: #333;
+      border: #c8ccb8 2px solid;
+
+      h3 {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .buttons {
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+        align-items: stretch;
+        width: 100%;
+        text-align: center;
+        font-size: 14px;
+
+        a {
+          border-radius: 8px;
+          background-color: $jazz;
+          border: 1px solid $jazz;
+          padding-top: 8px;
+          width: inherit;
+          padding-bottom: 8px;
+          color: white;
+        }
+        button {
+          border-radius: 8px;
+          border: 0;
+          width: inherit;
+          cursor: pointer;
+        }
+      }
+
+      img {
+        align-self: center;
+        aspect-ratio: 4/5;
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+      }
+
+      &:hover {
+        border-color: $jazz;
+      }
+    }
+  }
 }

@@ -1,0 +1,23 @@
+@use "./variables" as *;
+
+.payment_page {
+
+    .p-Accordion {
+        display: flex;
+        flex-direction: row;
+    }
+
+    button {
+        padding: 17px;
+        border-radius: 5px;
+        background-color: white;
+        border: rgb(230, 230, 230) solid 1px;
+        margin-top: 16px;
+        font-weight: 600;
+        color: #6d6e78;
+
+        &:hover {
+            color: #333;
+        }
+    }
+}

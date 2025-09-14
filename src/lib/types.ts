@@ -32,10 +32,10 @@ export interface Customer {
   orders: {
     edges: {
       node: {
-        id: string
-      }
-    }[]
-  }
+        id: string;
+      };
+    }[];
+  };
 }
 
 export interface Order {
@@ -47,11 +47,11 @@ export interface Order {
           varant: {
             id: string;
             title: string;
-          }
-        }
-      }[]
-    }
-  }
+          };
+        };
+      }[];
+    };
+  };
 }
 
 export interface CountPage {
@@ -77,7 +77,10 @@ export interface Cart {
     id: string;
     title: string;
     price: {
-      amount: number;
+      amount: string;
+    };
+    image: {
+      url: string;
     };
     product: {
       id: string;
@@ -103,7 +106,7 @@ export interface OrderCreateOrderInput {
 export interface GetCartResponse {
   data: {
     cart: {
-      checkoutUrl: string,
+      checkoutUrl: string;
       lines: {
         edges: {
           node: Cart;

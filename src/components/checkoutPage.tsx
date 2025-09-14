@@ -99,8 +99,9 @@ const CheckoutPage = ({
       {!!customerId && (
         <form onSubmit={handleSubmit}>
           <AddressElement options={{ mode: "shipping" }} />
+          <br/>
           <PaymentElement />
-          <button>Pay ${totalAmount}$</button>
+          <button>Pay {totalAmount}$</button>
         </form>
       )}
     </div>
